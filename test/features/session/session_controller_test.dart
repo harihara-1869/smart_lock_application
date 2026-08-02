@@ -296,6 +296,38 @@ void main() {
       expect(controller.state, const TransportState.released());
     });
 
+    test('rejects M3 ack with unexpected data bytes', () async {
+      final lock = _SimulatedLock(lockSeed, lockPublicKey);
+      final controller = _buildController(
+        transport: transport,
+        lockPublicKey: lockPublicKey,
+        phoneSeed: phoneSeed,
+        phonePublicKey: phonePublicKey,
+      );
+
+      transport.enqueueCallback(
+        (capdu) async => Result.ok(await lock.handleM1(capdu)),
+      );
+      // M3 ack with SW 90 00 but 4 spurious data bytes (firmware §7.3 says
+      // empty data only).
+      transport.enqueueResponse(Uint8List.fromList([0x00, 0x00, 0x00, 0x00, 0x90, 0x00]));
+
+      final sessionFuture = controller.startSession(lockId: 'lock1');
+      await _pump();
+      transport.simulateTagDiscovered();
+
+      final result = await sessionFuture;
+
+      expect(result, isA<Err<void, NfcSessionError>>());
+      switch (result) {
+        case Err(:final error):
+          expect(error, isA<NfcUnexpected>());
+        case Ok():
+          fail('Expected Err, got Ok');
+      }
+      expect(controller.state, const TransportState.released());
+    });
+
     test('maps tagLost transport error during M1', () async {
       final controller = _buildController(
         transport: transport,

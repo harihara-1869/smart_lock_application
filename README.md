@@ -161,9 +161,16 @@ $$\text{Transcript} = \text{"SLOCK-HS-v1"} \parallel 0\text{x01} \parallel pk_{e
 
 ---
 
+### Implementation Notes
+
+- **QR Provision Secret format**: The spec (APP_Development.md §5) describes the QR payload as a "64-character uppercase hex string." The parser (`QrProvisionParser`) accepts both upper and lowercase hex for robustness against QR scanner normalization — this is intentionally more permissive than the spec.
+- **M3 Ack validation**: The phone rejects an M3 ack R-APDU that carries any data bytes (firmware §7.3 step 5 requires empty data), tearing down the session immediately.
+
+---
+
 ## Current Project Status
 
-### Completed Core Components (171/171 Unit Tests Passing)
+### Completed Core Components (189/189 Unit & Integration Tests Passing)
 - [x] **C-APDU / R-APDU Serialization & Parsing** (`apdu.dart` / `apdu_test.dart`): Round-trip verification, short APDU bounds checks, status word extraction.
 - [x] **Protocol Constants & Parameters** (`protocol_constants.dart` / `protocol_constants_test.dart`): CLA, P1, P2 defaults, INS codes, key lengths, HKDF info strings.
 - [x] **Status Word Dictionary** (`status_word.dart` / `status_word_test.dart`): ISO-DEP and custom status word mapping and error evaluation.
@@ -175,14 +182,10 @@ $$\text{Transcript} = \text{"SLOCK-HS-v1"} \parallel 0\text{x01} \parallel pk_{e
 - [x] **Secure Channel** (`secure_channel.dart` / `secure_channel_test.dart`): Directional key encryption (`K_p2e`/`K_e2p`), payload size validation, and GCM tag error mapping.
 - [x] **Session Controller & Facade** (`session_controller.dart`, `lock_connection.dart`): Full state machine lifecycle orchestration, NFC discovery event handling, app commands (`unlock`, `lock`, `getStatus`, `revokeKey`), and error handling.
 - [x] **Identity & Lock Key Persistence** (`identity_keystore.dart`, `trusted_locks_store.dart`): Secure storage integration for phone long-term identity seed/pubkey and trusted lock public keys.
+- [x] **Provisioning Flow** (`provision_controller.dart`, `qr_provision_parser.dart`): QR secret parsing, dual-deferred handshake verification, and lock registration.
+- [x] **End-to-End Integration Tests** (`full_session_test.dart`): 11 scripted scenarios through `FakeIsoDepTransport` covering handshake, provisioning, error paths, and the provision→unlock cycle.
 
 ### Remaining Implementation Roadmap
-- [ ] **Provisioning Flow (Phase 8)**:
-  - QR Code parser for 32-byte provision secret.
-  - Console fallback parser.
-  - `ProvisionController` executing dual-deferred handshake verification and lock registration.
-- [ ] **End-to-End Integration Tests (Phase 9)**:
-  - Scripted integration test suite through `FakeIsoDepTransport`.
 - [ ] **User Interface & UX**:
   - Lock scanning, NFC discovery UI, unlock dashboard, and key management views.
 

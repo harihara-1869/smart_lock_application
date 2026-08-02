@@ -328,6 +328,14 @@ class SessionController {
       return Result.err(_mapM3Status(m3AckRapdu));
     }
 
+    // Firmware §7.3 step 5: M3 ack must carry 0 data bytes.
+    if (m3AckRapdu.data.isNotEmpty) {
+      _release();
+      return Result.err(NfcSessionError.unexpected(
+        'M3 ack has unexpected data: ${m3AckRapdu.data.length} bytes',
+      ));
+    }
+
     // --- Session established ---
     _secureChannel = SecureChannel(
       kP2E: m3Result.kP2E,

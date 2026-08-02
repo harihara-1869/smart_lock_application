@@ -44,10 +44,5 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-
-APP_Development.md
-Communication_Module_Master.md
-
 .commandcode
-
-handoff.md
+UI_Design/
