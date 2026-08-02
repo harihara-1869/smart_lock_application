@@ -37,9 +37,9 @@ class LockConnection {
   /// Query the lock's status (battery, bolt position, last error).
   Future<Result<LockStatus, NfcSessionError>> getStatus(String lockId) async {
     final sessionResult = await _controller.startSession(lockId: lockId);
-    if (sessionResult case Err()) {
+    if (sessionResult case Err(:final error)) {
       await _controller.abort();
-      return sessionResult;
+      return Result.err(error);
     }
 
     try {
@@ -48,7 +48,7 @@ class LockConnection {
       );
       return switch (cmdResult) {
         Ok(:final value) => _parseStatusResponse(value),
-        Err() => cmdResult,
+        Err(:final error) => Result.err(error),
       };
     } finally {
       await _controller.abort();
@@ -88,7 +88,7 @@ class LockConnection {
       final cmdResult = await _controller.sendSecureCommand(plaintext);
       return switch (cmdResult) {
         Ok(:final value) => _checkOk(value),
-        Err() => cmdResult,
+        Err(:final error) => Result.err(error),
       };
     } finally {
       await _controller.abort();
