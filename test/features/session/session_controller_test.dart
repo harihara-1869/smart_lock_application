@@ -1,4 +1,4 @@
-import 'dart:async';
+
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -10,7 +10,7 @@ import 'package:smartlock_application/features/nfc/protocol_constants.dart';
 import 'package:smartlock_application/features/nfc/transport_state.dart';
 import 'package:smartlock_application/features/session/commands/app_commands.dart';
 import 'package:smartlock_application/features/session/crypto/crypto_primitives.dart';
-import 'package:smartlock_application/features/session/handshake.dart';
+
 import 'package:smartlock_application/features/session/session_controller.dart';
 
 /// Unwrap a Result, failing the test with [message] on Err.
@@ -31,7 +31,7 @@ class _SimulatedLock {
   final Uint8List lockSeed;
   final Uint8List lockPublicKey;
 
-  Uint8List? _ephPrivateKey;
+
   Uint8List? _challengeL;
   Uint8List? _kP2E;
   Uint8List? _kE2P;
@@ -47,7 +47,7 @@ class _SimulatedLock {
     final challengeP = Uint8List.sublistView(m1Payload, 32, 64);
 
     final lockEph = await CryptoPrimitives.generateX25519KeyPair();
-    _ephPrivateKey = lockEph.privateKey;
+
     _challengeL = CryptoPrimitives.generateSecureRandom(32);
 
     final transcript = CryptoPrimitives.buildTranscript(
@@ -178,7 +178,7 @@ void main() {
       switch (result) {
         case Err(:final error):
           expect(error, isA<NfcInvalidState>());
-        case Ok(:final value):
+        case Ok():
           fail('Expected Err, got Ok');
       }
     });
@@ -229,7 +229,7 @@ void main() {
       switch (result) {
         case Err(:final error):
           expect(error, isA<NfcUntrustedLock>());
-        case Ok(:final value):
+        case Ok():
           fail('Expected Err, got Ok');
       }
     });
@@ -259,7 +259,7 @@ void main() {
       switch (result) {
         case Err(:final error):
           expect(error, isA<NfcAuthenticationFailed>());
-        case Ok(:final value):
+        case Ok():
           fail('Expected Err, got Ok');
       }
       expect(controller.state, const TransportState.released());
@@ -290,7 +290,7 @@ void main() {
       switch (result) {
         case Err(:final error):
           expect(error, isA<NfcHandshakeRejected>());
-        case Ok(:final value):
+        case Ok():
           fail('Expected Err, got Ok');
       }
       expect(controller.state, const TransportState.released());
@@ -316,7 +316,7 @@ void main() {
       switch (result) {
         case Err(:final error):
           expect(error, isA<NfcTagLost>());
-        case Ok(:final value):
+        case Ok():
           fail('Expected Err, got Ok');
       }
       expect(controller.state, const TransportState.released());
@@ -410,7 +410,7 @@ void main() {
       switch (cmdResult) {
         case Err(:final error):
           expect(error, isA<NfcDecryptionFailed>());
-        case Ok(:final value):
+        case Ok():
           fail('Expected Err, got Ok');
       }
       expect(controller.state, const TransportState.released());

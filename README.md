@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Flutter SDK](https://img.shields.io/badge/Flutter-%5E3.12.2-02569B?logo=flutter)](https://flutter.dev)
-[![Tests](https://img.shields.io/badge/Tests-60%20passed-brightgreen)](test)
+[![Tests](https://img.shields.io/badge/Tests-171%20passed-brightgreen)](test)
 [![Firmware Repo](https://img.shields.io/badge/Firmware-smart__lock__firmware-black?logo=github)](https://github.com/harihara-1869/smart_lock_firmware)
 
 A secure, high-assurance mobile application built with **Flutter** and **Dart**, designed to control and authenticate with the Smart Lock hardware over ISO-DEP NFC.
@@ -55,6 +55,7 @@ lib/
 │   ├── app.dart
 │   └── theme.dart
 ├── core/                       # Core shared patterns & utilities
+│   ├── nfc_transport/          # ISO-DEP transport interfaces & FakeIsoDepTransport test double
 │   └── result.dart             # Monadic Result<T, E> type for safe error handling
 └── features/                   # Domain feature modules
     ├── nfc/                    # NFC transport, APDU models, and protocol constants
@@ -63,7 +64,15 @@ lib/
     │   ├── protocol_constants.dart # Protocol parameters, INS codes, key sizes
     │   ├── status_word.dart    # SW1/SW2 status dictionary
     │   └── transport_state.dart# ISO-DEP state machine (idle -> activated -> handshake -> secureSession -> released)
-    ├── session/                # Session lifecycle & cryptographic handshake runner
+    ├── session/                # Cryptographic handshake, secure channel, and session controller
+    │   ├── commands/           # AppCommands (0x01-0x05) & LockStatus parsing
+    │   ├── crypto/             # CryptoPrimitives (X25519, Ed25519, HKDF, AES-256-GCM)
+    │   ├── facade/             # LockConnection high-level API
+    │   ├── handshake.dart      # Pure handshake message builders & parsers
+    │   ├── identity_keystore.dart # Phone long-term key management
+    │   ├── secure_channel.dart # Directional payload encryption/decryption
+    │   ├── session_controller.dart # Session lifecycle orchestration
+    │   └── trusted_locks_store.dart # Trusted lock key storage
     └── lock/                   # Lock management & unlock user interface
 ```
 
@@ -90,6 +99,7 @@ Communication with the lock hardware uses ISO 7816-4 short APDUs with proprietar
 | `0x10` | `CMD_HANDSHAKE_INIT` | `ACTIVATED` | **M1**: Client Ephemeral Public Key (32B) + Challenge `c_P` (32B) |
 | `0x11` | `CMD_HANDSHAKE_FINISH` | `HANDSHAKE` | **M3**: Client Signature `Sig_P` (64B) over transcript |
 | `0x20` | `CMD_SECURE_PAYLOAD` | `SECURE_SESSION` | AES-256-GCM Encrypted Payload: Nonce (12B) + Ciphertext + Tag (16B) |
+| `0x30` | `CMD_SESSION_ABORT` | `ANY` | Best-effort session teardown command |
 
 ---
 
@@ -153,27 +163,28 @@ $$\text{Transcript} = \text{"SLOCK-HS-v1"} \parallel 0\text{x01} \parallel pk_{e
 
 ## Current Project Status
 
-### Completed Core Components (60/60 Unit Tests Passing)
+### Completed Core Components (171/171 Unit Tests Passing)
 - [x] **C-APDU / R-APDU Serialization & Parsing** (`apdu.dart` / `apdu_test.dart`): Round-trip verification, short APDU bounds checks, status word extraction.
 - [x] **Protocol Constants & Parameters** (`protocol_constants.dart` / `protocol_constants_test.dart`): CLA, P1, P2 defaults, INS codes, key lengths, HKDF info strings.
 - [x] **Status Word Dictionary** (`status_word.dart` / `status_word_test.dart`): ISO-DEP and custom status word mapping and error evaluation.
 - [x] **Transport State Machine Models** (`transport_state.dart` / `transport_state_test.dart`): Freezed union equality and state tracking representation.
 - [x] **NFC Session Error Taxonomy** (`nfc_errors.dart` / `nfc_errors_test.dart`): Sealed `NfcSessionError` variants covering timeouts, link loss, status mismatches, and payload limits.
 - [x] **Result Pattern & Foundation** (`lib/core/result.dart`): Monadic error handling types for clean async flows.
+- [x] **Cryptographic Engine** (`crypto_primitives.dart` / `crypto_primitives_test.dart`): Pure X25519 key exchange, Ed25519 sign/verify, HKDF-SHA256 key derivation, AES-256-GCM payload encryption, and transcript generation.
+- [x] **Handshake Protocol Runner** (`handshake.dart` / `handshake_test.dart`): M1/M2/M3 message assembly, verification, key derivation, and dual-deferred provisioning support.
+- [x] **Secure Channel** (`secure_channel.dart` / `secure_channel_test.dart`): Directional key encryption (`K_p2e`/`K_e2p`), payload size validation, and GCM tag error mapping.
+- [x] **Session Controller & Facade** (`session_controller.dart`, `lock_connection.dart`): Full state machine lifecycle orchestration, NFC discovery event handling, app commands (`unlock`, `lock`, `getStatus`, `revokeKey`), and error handling.
+- [x] **Identity & Lock Key Persistence** (`identity_keystore.dart`, `trusted_locks_store.dart`): Secure storage integration for phone long-term identity seed/pubkey and trusted lock public keys.
 
 ### Remaining Implementation Roadmap
-- [ ] **Cryptographic Engine & Session Handshake**:
-  - Client-side Ed25519 signature generation (`Sig_P`) and verification (`Sig_L`).
-  - Ephemeral X25519 key generation and shared secret calculation.
-  - HKDF-SHA256 key expansion (`K_p2e` / `K_e2p`).
-  - AES-256-GCM payload encryption and decryption runner using the `cryptography` package.
-- [ ] **Key Provisioning & Credential Storage**:
-  - Secure storage integration via `flutter_secure_storage` for long-term Ed25519 identity keypairs.
-  - Key registration and initial lock provisioning protocol flows.
-- [ ] **User Interface & User Experience**:
-  - Lock scanning, NFC reader discovery, and tap-to-unlock screen flows.
-  - Lock status dashboard, activity logs, and key management UI.
-  - Integration of Riverpod UI state providers and app routing.
+- [ ] **Provisioning Flow (Phase 8)**:
+  - QR Code parser for 32-byte provision secret.
+  - Console fallback parser.
+  - `ProvisionController` executing dual-deferred handshake verification and lock registration.
+- [ ] **End-to-End Integration Tests (Phase 9)**:
+  - Scripted integration test suite through `FakeIsoDepTransport`.
+- [ ] **User Interface & UX**:
+  - Lock scanning, NFC discovery UI, unlock dashboard, and key management views.
 
 ---
 

@@ -45,7 +45,7 @@ abstract final class CryptoPrimitives {
       x25519KeyPairFromSeed(Uint8List seed) async {
     assert(seed.length == 32, 'X25519 seed must be 32 bytes');
     final keyPair = await _x25519.newKeyPairFromSeed(seed);
-    final extracted = await keyPair.extract() as SimpleKeyPairData;
+    final extracted = await keyPair.extract();
     final privateKey = Uint8List.fromList(extracted.bytes);
     final publicKey = Uint8List.fromList(extracted.publicKey.bytes);
     return (privateKey: privateKey, publicKey: publicKey);
@@ -91,7 +91,7 @@ abstract final class CryptoPrimitives {
   static Future<({Uint8List privateKey, Uint8List publicKey})>
       generateEd25519KeyPair() async {
     final keyPair = await _ed25519.newKeyPair();
-    final extracted = await keyPair.extract() as SimpleKeyPairData;
+    final extracted = await keyPair.extract();
     final privateKey = Uint8List.fromList(extracted.bytes);
     final publicKey = Uint8List.fromList(extracted.publicKey.bytes);
     return (privateKey: privateKey, publicKey: publicKey);
@@ -104,7 +104,7 @@ abstract final class CryptoPrimitives {
       ed25519KeyPairFromSeed(Uint8List seed) async {
     assert(seed.length == 32, 'Ed25519 seed must be 32 bytes');
     final keyPair = await _ed25519.newKeyPairFromSeed(seed);
-    final extracted = await keyPair.extract() as SimpleKeyPairData;
+    final extracted = await keyPair.extract();
     final privateKey = Uint8List.fromList(extracted.bytes);
     final publicKey = Uint8List.fromList(extracted.publicKey.bytes);
     return (privateKey: privateKey, publicKey: publicKey);
