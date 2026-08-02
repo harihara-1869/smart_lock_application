@@ -7,20 +7,32 @@ import 'package:smartlock_application/core/result.dart';
 
 /// Scriptable entry for [FakeIsoDepTransport].
 ///
-/// Each entry pairs an optional [expectedCommand] with a [response].
-/// If [expectedCommand] is non-null, the transceive call's command bytes
-/// are validated against it and a mismatch throws [StateError].
+/// Each entry pairs an optional [expectedCommand] with a [response] (or a
+/// [responseCallback] that dynamically builds the response from the incoming
+/// command bytes). If [expectedCommand] is non-null, the transceive call's
+/// command bytes are validated against it and a mismatch throws [StateError].
 class FakeTransceiveEntry {
   FakeTransceiveEntry({
     this.expectedCommand,
-    required this.response,
-  });
+    this.response,
+    this.responseCallback,
+  }) : assert(
+          response != null || responseCallback != null,
+          'Either response or responseCallback must be provided',
+        );
 
   /// If non-null, the incoming command bytes must match exactly.
   final Uint8List? expectedCommand;
 
   /// The response to return — either [Result.ok] with bytes or [Result.err].
-  final Result<Uint8List, TransportError> response;
+  /// Null when [responseCallback] is used instead.
+  final Result<Uint8List, TransportError>? response;
+
+  /// Dynamic response builder — receives the incoming command bytes and
+  /// returns the response. Used when the scripted response depends on the
+  /// command content (e.g. building a valid M2 from a random M1 ephemeral key).
+  final Future<Result<Uint8List, TransportError>> Function(Uint8List)?
+      responseCallback;
 }
 
 /// Scriptable test double for [IsoDepTransport].
@@ -99,8 +111,14 @@ class FakeIsoDepTransport implements IsoDepTransport {
       }
     }
 
+    // Generate the response — either dynamically via callback or from the
+    // pre-scripted response field.
+    final response = entry.responseCallback != null
+        ? await entry.responseCallback!(commandApdu)
+        : entry.response!;
+
     // If the scripted response is a tag-lost error, also update connected state.
-    switch (entry.response) {
+    switch (response) {
       case Err(error: TransportTagLost()):
         _connected = false;
         _eventController.add(const TransportEvent.tagLost());
@@ -108,7 +126,7 @@ class FakeIsoDepTransport implements IsoDepTransport {
         break;
     }
 
-    return entry.response;
+    return response;
   }
 
   @override
@@ -151,6 +169,18 @@ class FakeIsoDepTransport implements IsoDepTransport {
   /// Enqueue a transport error for the next [transceive] call.
   void enqueueError(TransportError error) {
     _queue.add(FakeTransceiveEntry(response: Result.err(error)));
+  }
+
+  /// Enqueue a dynamic callback that builds the response for the next
+  /// [transceive] call based on the incoming command bytes.
+  ///
+  /// Used when the scripted response depends on the command content — e.g.
+  /// building a valid M2 R-APDU from the phone's random M1 ephemeral key.
+  void enqueueCallback(
+    Future<Result<Uint8List, TransportError>> Function(Uint8List command)
+        callback,
+  ) {
+    _queue.add(FakeTransceiveEntry(responseCallback: callback));
   }
 
   /// Whether all enqueued entries have been consumed.
