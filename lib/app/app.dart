@@ -1,6 +1,10 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:smartlock_application/app/theme.dart';
 import 'package:smartlock_application/features/ui/screens/my_keys_screen.dart';
+import 'package:smartlock_application/features/ui/screens/step_1_press_button.dart';
+import 'package:smartlock_application/features/ui/screens/step_2_scan_qr.dart';
+import 'package:smartlock_application/features/ui/screens/step_3_nfc_sync.dart';
 
 /// Root widget for the NFC Smart Lock application.
 class App extends StatelessWidget {
@@ -13,7 +17,36 @@ class App extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      home: const MyKeysScreen(),
+      initialRoute: '/',
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/':
+            return MaterialPageRoute(builder: (_) => const MyKeysScreen());
+          case '/provision_step_1':
+            return MaterialPageRoute(builder: (_) => const Step1PressButtonScreen());
+          case '/provision_step_2':
+            return MaterialPageRoute(builder: (_) => const Step2ScanQrScreen());
+          case '/provision_step_3':
+            final secret = settings.arguments as Uint8List;
+            return MaterialPageRoute(
+              builder: (_) => Step3NfcSyncScreen(provisionSecret: secret),
+            );
+          case '/actuate':
+            final lockId = settings.arguments as String;
+            return MaterialPageRoute(
+              builder: (_) => Scaffold(
+                appBar: AppBar(title: const Text('Actuate (Phase 14)')),
+                body: Center(child: Text('Actuate Lock: $lockId')),
+              ),
+            );
+          default:
+            return MaterialPageRoute(
+              builder: (_) => Scaffold(
+                body: Center(child: Text('No route defined for ${settings.name}')),
+              ),
+            );
+        }
+      },
     );
   }
 }
