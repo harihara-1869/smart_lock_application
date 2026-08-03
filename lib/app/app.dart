@@ -5,6 +5,7 @@ import 'package:smartlock_application/features/ui/screens/my_keys_screen.dart';
 import 'package:smartlock_application/features/ui/screens/step_1_press_button.dart';
 import 'package:smartlock_application/features/ui/screens/step_2_scan_qr.dart';
 import 'package:smartlock_application/features/ui/screens/step_3_nfc_sync.dart';
+import 'package:smartlock_application/features/ui/screens/actuate_lock_screen.dart';
 
 /// Root widget for the NFC Smart Lock application.
 class App extends StatelessWidget {
@@ -34,10 +35,7 @@ class App extends StatelessWidget {
           case '/actuate':
             final lockId = settings.arguments as String;
             return MaterialPageRoute(
-              builder: (_) => Scaffold(
-                appBar: AppBar(title: const Text('Actuate (Phase 14)')),
-                body: Center(child: Text('Actuate Lock: $lockId')),
-              ),
+              builder: (_) => ActuateLockScreen(lockId: lockId),
             );
           default:
             return MaterialPageRoute(
