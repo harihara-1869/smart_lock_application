@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import '../../app/app_colors.dart';
 
 class SecureCard extends StatelessWidget {
   final Widget child;
