@@ -160,6 +160,15 @@ class _ActuateLockScreenState extends ConsumerState<ActuateLockScreen> {
                   onPressed: (_isActuating || _success) ? null : _actuateLock,
                 ),
               ),
+              if (_isActuating) ...[
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () {
+                    ref.read(lockConnectionProvider).abort();
+                  },
+                  child: const Text('Cancel'),
+                ),
+              ],
             ],
           ),
         ),

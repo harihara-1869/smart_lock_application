@@ -102,4 +102,9 @@ class ProvisionController {
       _ => NfcSessionError.unexpected('unknown app status: 0x${status.toRadixString(16)}'),
     };
   }
+
+  /// Manually aborts the current session (e.g. if the user cancels).
+  Future<void> abort() async {
+    await _sessionController.abort();
+  }
 }

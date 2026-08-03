@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Flutter SDK](https://img.shields.io/badge/Flutter-%5E3.12.2-02569B?logo=flutter)](https://flutter.dev)
-[![Tests](https://img.shields.io/badge/Tests-171%20passed-brightgreen)](test)
+[![Tests](https://img.shields.io/badge/Tests-189%20passed-brightgreen)](test)
 [![Firmware Repo](https://img.shields.io/badge/Firmware-smart__lock__firmware-black?logo=github)](https://github.com/harihara-1869/smart_lock_firmware)
 
 A secure, high-assurance mobile application built with **Flutter** and **Dart**, designed to control and authenticate with the Smart Lock hardware over ISO-DEP NFC.
@@ -17,12 +17,12 @@ For the ESP32 hardware and PN532 controller implementation details, see the comp
 
 - [Overview](#overview)
 - [Application Architecture](#application-architecture)
+- [Comprehensive Documentation](#comprehensive-documentation)
 - [NFC & Security Protocol Overview](#nfc--security-protocol-overview)
   - [APDU Framing](#apdu-framing)
   - [3-Message Mutual Authentication Handshake (`SLOCK-HS-v1`)](#3-message-mutual-authentication-handshake-slock-hs-v1)
   - [Cryptographic Specifications](#cryptographic-specifications)
   - [Status Word & Error Taxonomy](#status-word--error-taxonomy)
-- [Current Project Status](#current-project-status)
 - [Repository Structure](#repository-structure)
 - [Getting Started & Development](#getting-started--development)
   - [Prerequisites](#prerequisites)
@@ -53,33 +53,57 @@ The mobile application is structured around a modular, feature-first Flutter arc
 lib/
 ├── app/                        # App configuration, router, and material design system
 │   ├── app.dart
-│   └── theme.dart
+│   ├── app_colors.dart         # Obsidian Cyber-Secure & Crystal Secure palettes
+│   ├── app_typography.dart     # Google Fonts (Inter) typography definitions
+│   └── theme.dart              # Global ThemeData configuration
 ├── core/                       # Core shared patterns & utilities
-│   ├── nfc_transport/          # ISO-DEP transport interfaces & FakeIsoDepTransport test double
+│   ├── nfc_transport/          # ISO-DEP transport interfaces & implementations
+│   ├── providers/              # Riverpod dependency injection registry
+│   ├── widgets/                # Reusable UI components (PrimaryButton, SecureCard)
 │   └── result.dart             # Monadic Result<T, E> type for safe error handling
-└── features/                   # Domain feature modules
-    ├── nfc/                    # NFC transport, APDU models, and protocol constants
-    │   ├── apdu.dart           # C-APDU construction & R-APDU parsing
-    │   ├── nfc_errors.dart     # Sealed NfcSessionError taxonomy
-    │   ├── protocol_constants.dart # Protocol parameters, INS codes, key sizes
-    │   ├── status_word.dart    # SW1/SW2 status dictionary
-    │   └── transport_state.dart# ISO-DEP state machine (idle -> activated -> handshake -> secureSession -> released)
-    ├── session/                # Cryptographic handshake, secure channel, and session controller
-    │   ├── commands/           # AppCommands (0x01-0x05) & LockStatus parsing
-    │   ├── crypto/             # CryptoPrimitives (X25519, Ed25519, HKDF, AES-256-GCM)
-    │   ├── facade/             # LockConnection high-level API
-    │   ├── handshake.dart      # Pure handshake message builders & parsers
-    │   ├── identity_keystore.dart # Phone long-term key management
-    │   ├── secure_channel.dart # Directional payload encryption/decryption
-    │   ├── session_controller.dart # Session lifecycle orchestration
-    │   └── trusted_locks_store.dart # Trusted lock key storage
-    └── lock/                   # Lock management & unlock user interface
+├── features/                   # Domain feature modules
+│   ├── nfc/                    # NFC transport, APDU models, and protocol constants
+│   │   ├── apdu.dart           # C-APDU construction & R-APDU parsing
+│   │   ├── nfc_errors.dart     # Sealed NfcSessionError taxonomy
+│   │   ├── protocol_constants.dart # Protocol parameters, INS codes, key sizes
+│   │   ├── status_word.dart    # SW1/SW2 status dictionary
+│   │   └── transport_state.dart# ISO-DEP state machine
+│   ├── session/                # Cryptographic handshake, secure channel, and session controller
+│   │   ├── commands/           # AppCommands (0x01-0x05) & LockStatus parsing
+│   │   ├── crypto/             # CryptoPrimitives (X25519, Ed25519, HKDF, AES-256-GCM)
+│   │   ├── facade/             # LockConnection high-level API
+│   │   ├── provisioning/       # QR parsing, dual-deferred handshake, ProvisionController
+│   │   ├── handshake.dart      # Pure handshake message builders & parsers
+│   │   ├── identity_keystore.dart # Phone long-term key management
+│   │   ├── secure_channel.dart # Directional payload encryption/decryption
+│   │   ├── session_controller.dart # Session lifecycle orchestration
+│   │   └── trusted_locks_store.dart # Trusted lock key storage
+│   └── ui/                     # User interface screens
+│       └── screens/
+│           ├── actuate_lock_screen.dart # Tap-to-unlock NFC trigger screen
+│           ├── my_keys_screen.dart      # Trusted locks dashboard
+│           ├── step_1_press_button.dart # Provisioning: Hardware interaction instructions
+│           ├── step_2_scan_qr.dart      # Provisioning: QR code scanner via mobile_scanner
+│           └── step_3_nfc_sync.dart     # Provisioning: NFC sync and cryptographic key exchange
+└── main.dart                   # Application entry point and Riverpod ProviderScope
 ```
 
 ### Key Architectural Patterns
 - **State Management**: Reactive state management with [Riverpod](https://riverpod.dev/).
 - **Immutable Data Models**: Code generation using [Freezed](https://pub.dev/packages/freezed) and [json_annotation](https://pub.dev/packages/json_annotation).
 - **Type-Safe NFC Communications**: Strongly typed APDU representations (`Capdu` and `Rapdu`) with explicit short-APDU bounds checking ($L_c \le 255$).
+
+---
+
+## Comprehensive Documentation
+
+For deep dives into specific system layers, please refer to the extensive documentation in the `docs/` directory:
+
+- **[Master Reference](docs/Master_Reference.md)**: The top-level blueprint. Traces the entire user journey (provisioning and unlocking) from the UI down to the physical OS RF field.
+- **[Protocol Specification](docs/Protocol.md)**: Full cryptographic specifications for `SLOCK-HS-v1`, including M1-M3 payload framing, HKDF key derivation, and AES-256-GCM bounds.
+- **[Session Orchestration](docs/Session.md)**: Detailed breakdown of the state machine (`idle` -> `activated` -> `handshake` -> `secureSession`) and the dual-deferred provisioning handshake.
+- **[State Management](docs/State_Management.md)**: Explains the strict Riverpod dependency injection registry and how secure storage bindings instantly refresh the UI.
+- **[UI & Design System](docs/UI_Design.md)**: Outlines the dual-theme "Obsidian Cyber-Secure" and "Crystal Secure" design languages, reusable widgets, and routing patterns.
 
 ---
 
@@ -168,34 +192,13 @@ $$\text{Transcript} = \text{"SLOCK-HS-v1"} \parallel 0\text{x01} \parallel pk_{e
 
 ---
 
-## Current Project Status
-
-### Completed Core Components (189/189 Unit & Integration Tests Passing)
-- [x] **C-APDU / R-APDU Serialization & Parsing** (`apdu.dart` / `apdu_test.dart`): Round-trip verification, short APDU bounds checks, status word extraction.
-- [x] **Protocol Constants & Parameters** (`protocol_constants.dart` / `protocol_constants_test.dart`): CLA, P1, P2 defaults, INS codes, key lengths, HKDF info strings.
-- [x] **Status Word Dictionary** (`status_word.dart` / `status_word_test.dart`): ISO-DEP and custom status word mapping and error evaluation.
-- [x] **Transport State Machine Models** (`transport_state.dart` / `transport_state_test.dart`): Freezed union equality and state tracking representation.
-- [x] **NFC Session Error Taxonomy** (`nfc_errors.dart` / `nfc_errors_test.dart`): Sealed `NfcSessionError` variants covering timeouts, link loss, status mismatches, and payload limits.
-- [x] **Result Pattern & Foundation** (`lib/core/result.dart`): Monadic error handling types for clean async flows.
-- [x] **Cryptographic Engine** (`crypto_primitives.dart` / `crypto_primitives_test.dart`): Pure X25519 key exchange, Ed25519 sign/verify, HKDF-SHA256 key derivation, AES-256-GCM payload encryption, and transcript generation.
-- [x] **Handshake Protocol Runner** (`handshake.dart` / `handshake_test.dart`): M1/M2/M3 message assembly, verification, key derivation, and dual-deferred provisioning support.
-- [x] **Secure Channel** (`secure_channel.dart` / `secure_channel_test.dart`): Directional key encryption (`K_p2e`/`K_e2p`), payload size validation, and GCM tag error mapping.
-- [x] **Session Controller & Facade** (`session_controller.dart`, `lock_connection.dart`): Full state machine lifecycle orchestration, NFC discovery event handling, app commands (`unlock`, `lock`, `getStatus`, `revokeKey`), and error handling.
-- [x] **Identity & Lock Key Persistence** (`identity_keystore.dart`, `trusted_locks_store.dart`): Secure storage integration for phone long-term identity seed/pubkey and trusted lock public keys.
-- [x] **Provisioning Flow** (`provision_controller.dart`, `qr_provision_parser.dart`): QR secret parsing, dual-deferred handshake verification, and lock registration.
-- [x] **End-to-End Integration Tests** (`full_session_test.dart`): 11 scripted scenarios through `FakeIsoDepTransport` covering handshake, provisioning, error paths, and the provision→unlock cycle.
-
-### Remaining Implementation Roadmap
-- [ ] **User Interface & UX**:
-  - Lock scanning, NFC discovery UI, unlock dashboard, and key management views.
-
----
 
 ## Repository Structure
 
 ```
 smartlock_application/
 ├── android/                        # Android native configuration & NFC permissions
+├── docs/                           # Comprehensive architectural and protocol documentation
 ├── lib/                            # Application Dart source code
 │   ├── app/                        # Main entry widget & material theme
 │   ├── core/                       # Result monad & core utilities

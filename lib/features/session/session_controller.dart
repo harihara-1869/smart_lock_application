@@ -205,6 +205,7 @@ class SessionController {
       }
     }
     _release();
+    await _transport.stopDiscovery();
     return const Result.ok(null);
   }
 
@@ -376,8 +377,10 @@ class SessionController {
     );
 
     try {
-      await completer.future;
+      await completer.future.timeout(const Duration(seconds: 30));
       return const Result.ok(null);
+    } on TimeoutException {
+      return const Result.err(NfcSessionError.timeout());
     } on NfcSessionError catch (e) {
       return Result.err(e);
     } catch (e) {

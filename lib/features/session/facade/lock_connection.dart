@@ -69,6 +69,11 @@ class LockConnection {
     return result;
   }
 
+  /// Manually aborts the current session (e.g. if the user cancels).
+  Future<void> abort() async {
+    await _controller.abort();
+  }
+
   // ---------------------------------------------------------------------------
   // Internal
   // ---------------------------------------------------------------------------

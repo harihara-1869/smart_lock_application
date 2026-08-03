@@ -121,6 +121,15 @@ class _Step3NfcSyncScreenState extends ConsumerState<Step3NfcSyncScreen> {
                   onPressed: _isProvisioning ? null : _startProvisioning,
                 ),
               ),
+              if (_isProvisioning) ...[
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () {
+                    ref.read(provisionControllerProvider).abort();
+                  },
+                  child: const Text('Cancel'),
+                ),
+              ],
             ],
           ),
         ),
