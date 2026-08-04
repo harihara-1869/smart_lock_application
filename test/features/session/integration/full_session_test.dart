@@ -574,6 +574,40 @@ void main() {
     });
 
     // =========================================================================
+    // Scenario 11: CMD_REVOKE_KEY — revoke the phone's key on the lock
+    // =========================================================================
+    test('scenario 11: CMD_REVOKE_KEY sends target key and removes it', () async {
+      final lock = _SimulatedLock(lockSeed: lockSeed, lockPublicKey: lockPublicKey);
+      final f = await _buildFixture(lockPublicKey: lockPublicKey);
+
+      _enqueueHandshake(f.transport, lock);
+      // CMD_REVOKE_KEY → response [AppStatus.ok]
+      f.transport.enqueueCallback(
+        (capdu) async => Result.ok(
+          await lock.handleSecurePayload(
+            capdu,
+            respond: (pt) {
+              // Request: opcode(1) ‖ target_pk(32) = 33 bytes.
+              expect(pt.length, 33);
+              expect(pt[0], AppCommands.cmdRevokeKey);
+              return Uint8List.fromList([AppStatus.ok]);
+            },
+          ),
+        ),
+      );
+      f.transport.enqueueResponse(Uint8List.fromList([0x90, 0x00]));
+
+      final phoneKp = await CryptoPrimitives.generateEd25519KeyPair();
+      final future = f.lockConnection.revokeKey('lock1', phoneKp.publicKey);
+      await _pump();
+      f.transport.simulateTagDiscovered();
+      final result = await future;
+
+      _unwrap(result, 'revokeKey should succeed');
+      expect(f.transport.allConsumed, isTrue);
+    });
+
+    // =========================================================================
     // Bonus: Provision → Unlock cycle (full end-to-end wiring)
     // =========================================================================
     test('provision then unlock cycle (Phase 7+8 end-to-end)', () async {

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:nfc_manager/nfc_manager.dart';
@@ -27,6 +29,24 @@ final isoDepTransportProvider = Provider<IsoDepTransport>((ref) {
 final storageProvider = Provider<FlutterSecureStorage>((ref) {
   return const FlutterSecureStorage();
 });
+
+/// The provisioning secret (32 bytes) scanned in step 2 and consumed in
+/// step 3. Held in a scoped notifier rather than passed through the
+/// navigator's route arguments, so the routing layer never owns the secret
+/// and a wrong-typed push can't crash step 3.
+class ProvisionSecretNotifier extends Notifier<Uint8List?> {
+  @override
+  Uint8List? build() => null;
+
+  void set(Uint8List secret) => state = secret;
+
+  void clear() => state = null;
+}
+
+final provisionSecretProvider =
+    NotifierProvider<ProvisionSecretNotifier, Uint8List?>(
+  ProvisionSecretNotifier.new,
+);
 
 final identityKeystoreProvider = Provider<IdentityKeystore>((ref) {
   return IdentityKeystore(storage: ref.watch(storageProvider));

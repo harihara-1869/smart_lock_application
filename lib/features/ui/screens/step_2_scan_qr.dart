@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:smartlock_application/core/providers/nfc_providers.dart';
 import 'package:smartlock_application/features/session/provisioning/qr_provision_parser.dart';
 
-class Step2ScanQrScreen extends StatefulWidget {
+class Step2ScanQrScreen extends ConsumerStatefulWidget {
   const Step2ScanQrScreen({super.key});
 
   @override
-  State<Step2ScanQrScreen> createState() => _Step2ScanQrScreenState();
+  ConsumerState<Step2ScanQrScreen> createState() => _Step2ScanQrScreenState();
 }
 
-class _Step2ScanQrScreenState extends State<Step2ScanQrScreen> {
+class _Step2ScanQrScreenState extends ConsumerState<Step2ScanQrScreen> {
   final MobileScannerController _scannerController = MobileScannerController();
   final TextEditingController _manualInputController = TextEditingController();
   bool _isProcessing = false;
@@ -43,12 +45,12 @@ class _Step2ScanQrScreenState extends State<Step2ScanQrScreen> {
     final secret = QrProvisionParser.parse(code);
 
     if (secret != null) {
-      // Stop scanning and pass the data to Step 3
+      // Store the secret in the scoped provider, then move to step 3.
+      ref.read(provisionSecretProvider.notifier).set(secret);
       _scannerController.stop();
       Navigator.pushReplacementNamed(
         context,
         '/provision_step_3',
-        arguments: secret,
       );
     } else {
       // Show error and resume scanning after delay

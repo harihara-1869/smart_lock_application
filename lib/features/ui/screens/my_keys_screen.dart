@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartlock_application/core/providers/nfc_providers.dart';
 import 'package:smartlock_application/core/widgets/primary_button.dart';
 import 'package:smartlock_application/core/widgets/secure_card.dart';
+import 'package:smartlock_application/features/ui/screens/revoke_lock_screen.dart';
 
 class MyKeysScreen extends ConsumerWidget {
   const MyKeysScreen({super.key});
@@ -129,9 +130,15 @@ class MyKeysScreen extends ConsumerWidget {
             icon: Icon(Icons.delete, color: onSurfaceVariantColor),
             hoverColor: errorColor.withValues(alpha: 0.1),
             onPressed: () async {
-              final confirm = await _showRevokeDialog(context);
-              if (confirm == true) {
-                ref.read(trustedLocksNotifierProvider.notifier).revokeKey(lockId);
+              final navigator = Navigator.of(context);
+              final scope = await _showRevokeDialog(context);
+              switch (scope) {
+                case RevokeScope.phoneOnly:
+                  ref.read(trustedLocksNotifierProvider.notifier).revokeKey(lockId);
+                case RevokeScope.lockAndPhone:
+                  navigator.pushNamed('/revoke_lock', arguments: lockId);
+                case null:
+                  break; // dismissed
               }
             },
           ),
@@ -140,26 +147,33 @@ class MyKeysScreen extends ConsumerWidget {
     );
   }
 
-  Future<bool?> _showRevokeDialog(BuildContext context) {
-    return showDialog<bool>(
+  /// Asks the user whether to revoke from the phone only, or from the lock too.
+  ///
+  /// Returns `null` if dismissed, or the chosen [RevokeScope].
+  Future<RevokeScope?> _showRevokeDialog(BuildContext context) {
+    return showDialog<RevokeScope>(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Revoke Key?'),
-          content: const Text('This will remove the lock from your trusted devices.'),
+          content: const Text('Choose how you want to revoke this lock.'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(context, RevokeScope.phoneOnly),
+              child: const Text('Phone only'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, RevokeScope.lockAndPhone),
               style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
-              child: const Text('Revoke'),
+              child: const Text('Phone & lock'),
             ),
           ],
         );
-      }
+      },
     );
   }
 

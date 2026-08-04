@@ -63,7 +63,9 @@ Communication uses Command APDUs (C-APDU) and Response APDUs (R-APDU) under ISO/
 
 **Case-3 APDU** (with data): `[CLA INS P1 P2 Lc Data]` — 5 + `Lc` bytes.
 
-**No trailing `Le` byte is used.** The serialization is implemented in [`Capdu.toBytes()`](file:///workspaces/mobile_application/smartlock_application/lib/features/nfc/apdu.dart), which throws `ArgumentError` if `data.length > 255`.
+**No trailing `Le` byte is used.** The serialization is implemented in [`Capdu.toBytes()`](file:///workspaces/mobile_application/smartlock_application/lib/features/nfc/apdu.dart), which throws `ArgumentError` if `data.length > 255`. Consequently, the maximum C-APDU this application ever transmits is **260 bytes** (`CLA+INS+P1+P2+Lc+255`), not 261.
+
+> **Flagged cross-document discrepancy (wire framing):** The Firmware Engineering Specification's Transport part states a Short APDU C-APDU is "bounded at 261 bytes (CLA+INS+P1+P2+Lc+255 data bytes+Le)" — a formula that includes a trailing `Le` byte (ISO/IEC 7816-4 Case 4). This application never sends a trailing `Le` (Case 1 / Case 3 only), bounding its own maximum C-APDU at 260 bytes. Notably, the firmware's own C-APDU field table does **not** list an `Le` field, despite the accompanying prose formula including one — so the two documents state a different bound for the same message. No interoperability failure has been observed, which suggests the firmware's Transport parser does not require `Le`, but this is not treated as confirmation. **Resolution belongs in the firmware spec:** its Transport part's C-APDU bound should be corrected to 260 bytes (or its field table amended to justify 261).
 
 ### 2.2 Response APDU (R-APDU): Lock → Phone
 

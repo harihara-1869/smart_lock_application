@@ -134,16 +134,17 @@ Integrates `mobile_scanner` to read the lock's provisioning QR:
 
 - `QrProvisionParser.parse(code)` validates a 64-character hex string and returns a 32-byte `provisionSecret`; invalid codes show a snackbar and resume scanning after a 2 s debounce.
 - **Manual fallback**: a `TextField` (max 64 chars) + "Submit Manual Secret" button for emulator/testing scenarios without a physical QR.
-- On success, stops the scanner and `pushReplacementNamed` to `/provision_step_3` passing the secret via `RouteSettings.arguments`.
+- On success, stops the scanner, stores the secret in the scoped `provisionSecretProvider`, and `pushReplacementNamed` to `/provision_step_3` (no route argument).
 
 ### 6.4 `Step3NfcSyncScreen` — Provisioning: NFC Synchronization
 
 The culmination of provisioning. Orchestrates `ProvisionController.provisionLock(lockId, provisionSecret)`:
 
+- Reads the secret from the scoped `provisionSecretProvider` (set by step 2); a missing secret shows a "rescan the QR code" error rather than crashing.
 - Auto-starts provisioning on load (`addPostFrameCallback`).
 - Shows a large pulsing `Icons.nfc` glyph while syncing, an error state on failure ("Sync Failed" + message), and a `PrimaryButton` that becomes "Retry Sync".
 - A "Cancel" `TextButton` calls `ProvisionController.abort()` to cleanly kill a hanging RF field.
-- On success, refreshes `trustedLocksNotifierProvider` and pops to the dashboard with a success snackbar.
+- On success, clears the one-shot secret, refreshes `trustedLocksNotifierProvider`, and pops to the dashboard with a success snackbar.
 - The generated `lockId` is derived from the current timestamp (`"Lock-" + millis suffix`) — a placeholder identity for the prototype.
 
 ### 6.5 `ActuateLockScreen` — Unlock Actuation
@@ -157,6 +158,15 @@ The core utility screen for a selected trusted lock:
 **Design Decision: Asynchronous Actuation UX.**
 The UI displays a green "Unlocked!" success state as soon as the digital `CMD_UNLOCK` round-trip completes, *before* the physical motor has finished actuating. Because NFC connections are fragile, requiring the user to hold the phone against the door for the 2–3 s mechanical actuation would cause premature pull-away and timeout errors. Decoupling the digital response from the physical actuation gives immediate feedback and lets the user lower the phone safely; the firmware reports the true mechanical state on the next `CMD_GET_STATUS`.
 
+### 6.6 `RevokeLockScreen` — Key Revocation
+
+Removes a lock's trust relationship, offering two scopes chosen via selectable cards:
+
+- **Phone only** (`RevokeScope.phoneOnly`): removes the lock from the phone's `TrustedLocksStore` with no NFC session.
+- **Phone and lock** (`RevokeScope.lockAndPhone`): resolves the phone's Ed25519 identity and sends `CMD_REVOKE_KEY` (`0x05`) with the phone's public key over the NFC secure channel, so the lock forgets this phone too; on success, the local entry is also removed.
+
+The screen mirrors the actuation UX: a large status glyph, a "Tap phone to lock to revoke" `PrimaryButton`, a "Cancel" `TextButton` that calls `LockConnection.abort()`, and an error state ("Revoke Failed") with a retry button.
+
 ---
 
 ## 7. Flow & Navigation
@@ -168,7 +178,8 @@ Navigation strictly uses named routes defined in [`lib/app/app.dart`](file:///wo
 | `/` | `MyKeysScreen` | — |
 | `/provision_step_1` | `Step1PressButtonScreen` | — |
 | `/provision_step_2` | `Step2ScanQrScreen` | — |
-| `/provision_step_3` | `Step3NfcSyncScreen` | `Uint8List provisionSecret` |
+| `/provision_step_3` | `Step3NfcSyncScreen` | — (secret read from `provisionSecretProvider`) |
 | `/actuate` | `ActuateLockScreen` | `String lockId` |
+| `/revoke_lock` | `RevokeLockScreen` | `String lockId` |
 
-Cryptographic payloads (the QR provision secret) are passed between screens via `RouteSettings.arguments`, never through global state. Unknown routes render a fallback scaffold.
+Screens never route cryptographic payloads (the QR provision secret) through the navigator — the secret is held in the scoped `provisionSecretProvider`. Only simple identifiers (`lockId`) travel as `RouteSettings.arguments`. Unknown routes render a fallback scaffold.

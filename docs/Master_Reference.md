@@ -83,7 +83,21 @@ The underlying `SessionController` speaks in APDUs, nonces, and raw byte arrays.
 
 ---
 
-## 4. How the Layers Map to the Firmware
+## 4. The Revocation Journey
+
+*Goal: Remove a lock's trust relationship, on the phone only or on both phone and lock.*
+
+1. **Intent**: The user taps the delete icon on a lock card in [`my_keys_screen.dart`](file:///workspaces/mobile_application/smartlock_application/lib/features/ui/screens/my_keys_screen.dart).
+2. **Choice**: A dialog asks whether to revoke **phone only** (remove the local trusted entry, no NFC) or **phone and lock** (also send `CMD_REVOKE_KEY` to the lock).
+3. **Phone-only path**: `TrustedLocksNotifier.revokeKey(lockId)` removes the entry from `TrustedLocksStore` immediately. No RF field is activated.
+4. **Lock-and-phone path**: [`revoke_lock_screen.dart`](file:///workspaces/mobile_application/smartlock_application/lib/features/ui/screens/revoke_lock_screen.dart) resolves the phone's Ed25519 identity and calls `LockConnection.revokeKey(lockId, phonePublicKey)`.
+5. **Wire exchange**: A strict handshake (immediate M2 verification) runs, then `CMD_REVOKE_KEY` (`0x05`) with the phone's public key is encrypted and sent over the secure channel.
+6. **Lock-side effect**: The firmware removes the phone's public key from its persistent authorized-key store and replies `AppStatus.ok`.
+7. **Resolution**: On success, the local `TrustedLocksStore` entry is removed and the dashboard refreshes; the lock no longer authorizes this phone.
+
+---
+
+## 5. How the Layers Map to the Firmware
 
 The firmware (ESP32) is the *target* of the SLOCK-HS-v1 protocol; the phone is the *initiator*. The mapping:
 
@@ -97,7 +111,7 @@ The firmware (ESP32) is the *target* of the SLOCK-HS-v1 protocol; the phone is t
 
 Wire contracts shared verbatim between the two documents:
 
-- APDU framing: `CLA 0x80`, INS `0x10/0x11/0x20/0x30`, P1/P2 `0x00` (Short APDU, no `Le`).
+- APDU framing: `CLA 0x80`, INS `0x10/0x11/0x20/0x30`, P1/P2 `0x00` (Short APDU, no `Le`; max C-APDU 260 B — see the flagged framing discrepancy in `Protocol.md` §2.1).
 - Handshake messages: M1 64 B, M2 128 B, M3 64 B; transcript `"SLOCK-HS-v1" ‖ 0x01 ‖ pk_eph_P ‖ pk_eph_L ‖ c_P ‖ c_L`.
 - Key derivation: HKDF-SHA256, salt `c_P ‖ c_L`, info `"phone->esp"` / `"esp->phone"`.
 - AES-256-GCM payload: `nonce(12) ‖ ciphertext ‖ tag(16)`, plaintext ceiling 199 bytes (firmware OI-1 flagged).
@@ -106,7 +120,7 @@ Wire contracts shared verbatim between the two documents:
 
 ---
 
-## 5. Security Properties
+## 6. Security Properties
 
 | Property | Mechanism |
 |---|---|

@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:smartlock_application/app/theme.dart';
 import 'package:smartlock_application/features/ui/screens/my_keys_screen.dart';
@@ -6,6 +5,7 @@ import 'package:smartlock_application/features/ui/screens/step_1_press_button.da
 import 'package:smartlock_application/features/ui/screens/step_2_scan_qr.dart';
 import 'package:smartlock_application/features/ui/screens/step_3_nfc_sync.dart';
 import 'package:smartlock_application/features/ui/screens/actuate_lock_screen.dart';
+import 'package:smartlock_application/features/ui/screens/revoke_lock_screen.dart';
 
 /// Root widget for the NFC Smart Lock application.
 class App extends StatelessWidget {
@@ -28,14 +28,20 @@ class App extends StatelessWidget {
           case '/provision_step_2':
             return MaterialPageRoute(builder: (_) => const Step2ScanQrScreen());
           case '/provision_step_3':
-            final secret = settings.arguments as Uint8List;
+            // The provision secret is read from `provisionSecretProvider`,
+            // not from route arguments.
             return MaterialPageRoute(
-              builder: (_) => Step3NfcSyncScreen(provisionSecret: secret),
+              builder: (_) => const Step3NfcSyncScreen(),
             );
           case '/actuate':
             final lockId = settings.arguments as String;
             return MaterialPageRoute(
               builder: (_) => ActuateLockScreen(lockId: lockId),
+            );
+          case '/revoke_lock':
+            final lockId = settings.arguments as String;
+            return MaterialPageRoute(
+              builder: (_) => RevokeLockScreen(lockId: lockId),
             );
           default:
             return MaterialPageRoute(

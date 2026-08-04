@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartlock_application/core/result.dart';
@@ -6,12 +5,7 @@ import 'package:smartlock_application/core/providers/nfc_providers.dart';
 import 'package:smartlock_application/core/widgets/primary_button.dart';
 
 class Step3NfcSyncScreen extends ConsumerStatefulWidget {
-  final Uint8List provisionSecret;
-
-  const Step3NfcSyncScreen({
-    super.key,
-    required this.provisionSecret,
-  });
+  const Step3NfcSyncScreen({super.key});
 
   @override
   ConsumerState<Step3NfcSyncScreen> createState() => _Step3NfcSyncScreenState();
@@ -33,6 +27,14 @@ class _Step3NfcSyncScreenState extends ConsumerState<Step3NfcSyncScreen> {
   Future<void> _startProvisioning() async {
     if (_isProvisioning) return;
 
+    final provisionSecret = ref.read(provisionSecretProvider);
+    if (provisionSecret == null) {
+      setState(() {
+        _errorMessage = 'Missing provision secret — rescan the QR code.';
+      });
+      return;
+    }
+
     setState(() {
       _isProvisioning = true;
       _errorMessage = null;
@@ -42,13 +44,14 @@ class _Step3NfcSyncScreenState extends ConsumerState<Step3NfcSyncScreen> {
     final lockId = "Lock-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}";
     final result = await provisionController.provisionLock(
       lockId: lockId,
-      provisionSecret: widget.provisionSecret,
+      provisionSecret: provisionSecret,
     );
 
     if (mounted) {
       switch (result) {
         case Ok():
-          // Success! Refresh the keys list and go back home
+          // Success! Clear the one-shot secret and refresh the keys list.
+          ref.read(provisionSecretProvider.notifier).clear();
           ref.read(trustedLocksNotifierProvider.notifier).refresh();
           Navigator.popUntil(context, ModalRoute.withName('/'));
           ScaffoldMessenger.of(context).showSnackBar(
