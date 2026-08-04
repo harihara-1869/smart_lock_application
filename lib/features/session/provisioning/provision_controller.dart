@@ -98,7 +98,6 @@ class ProvisionController {
   NfcSessionError _mapProvisionStatus(int status) {
     return switch (status) {
       AppStatus.invalidSecret => const NfcSessionError.unexpected('invalid provision secret'),
-      AppStatus.unauthorized => const NfcSessionError.authenticationFailed(),
       _ => NfcSessionError.unexpected('unknown app status: 0x${status.toRadixString(16)}'),
     };
   }

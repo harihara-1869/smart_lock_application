@@ -10,7 +10,8 @@ enum LockState {
   /// 0x01 — bolt retracted / unlocked.
   unlocked,
 
-  /// Anything else — firmware reported a value this app version doesn't know.
+  /// Anything else (spec's `LOCK STATE UNKNOWN 0x02`, or a value this app
+  /// version doesn't know).
   unknown;
 
   /// Parse a raw lock-state byte.

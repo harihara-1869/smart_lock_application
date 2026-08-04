@@ -24,21 +24,19 @@ void main() {
   });
 
   group('AppStatus', () {
-    test('status bytes match APP_Development.md §4', () {
+    test('status bytes match firmware spec Part II §5.3', () {
       expect(AppStatus.ok, 0x00);
       expect(AppStatus.invalidSecret, 0x01);
-      expect(AppStatus.unauthorized, 0x02);
-      expect(AppStatus.invalidCmd, 0x03);
-      expect(AppStatus.actuatorError, 0x04);
+      expect(AppStatus.unknownCmd, 0x02);
+      expect(AppStatus.actuatorFault, 0x03);
     });
 
     test('status bytes are unique', () {
       final statuses = [
         AppStatus.ok,
         AppStatus.invalidSecret,
-        AppStatus.unauthorized,
-        AppStatus.invalidCmd,
-        AppStatus.actuatorError,
+        AppStatus.unknownCmd,
+        AppStatus.actuatorFault,
       ];
       expect(statuses.toSet().length, statuses.length);
     });

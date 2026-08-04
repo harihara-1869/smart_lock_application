@@ -33,21 +33,20 @@ abstract final class AppCommands {
 
 /// Application-layer status bytes returned by the lock.
 ///
-/// Source: APP_Development.md §4 — "Application Status Bytes".
+/// Source: Firmware Engineering Specification Part II §5.3 — the normative
+/// Application Status Byte table.
 /// These are encoded in the first byte of the decrypted response plaintext.
 abstract final class AppStatus {
-  /// Command executed successfully.
+  /// Command executed (or state read) successfully.
   static const int ok = 0x00;
 
   /// Provision Secret mismatched (CMD_PROVISION only).
   static const int invalidSecret = 0x01;
 
-  /// Key not recognized or revoked.
-  static const int unauthorized = 0x02;
+  /// OPCODE not present in the command table (unknown command).
+  static const int unknownCmd = 0x02;
 
-  /// Unknown opcode or malformed parameters.
-  static const int invalidCmd = 0x03;
-
-  /// Mechanical jam or motor fault.
-  static const int actuatorError = 0x04;
+  /// The actuator reported an unresolved/unknown state after an actuation
+  /// attempt.
+  static const int actuatorFault = 0x03;
 }

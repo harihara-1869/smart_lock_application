@@ -5,10 +5,10 @@ This document details the lifecycle, orchestration, and state machine of NFC ses
 ## 1. The Transport Layer
 At the lowest level, all communication is abstracted through the `IsoDepTransport` interface. This allows the application to remain decoupled from the specific OS implementations (like Android's `nfc_manager`) and enables injecting a `FakeIsoDepTransport` for exhaustive unit testing.
 
-- **`AndroidIsoDepTransport`**: Wraps `NfcManagerAndroid.enableReaderMode()`. It emits `TransportEvent.tagDiscovered` when a tag enters the RF field and `TransportEvent.tagLost` when it leaves or errors out.
+- **`AndroidIsoDepTransport`**: Implemented in [`lib/core/nfc_transport/android_iso_dep_transport.dart`](file:///workspaces/mobile_application/smartlock_application/lib/core/nfc_transport/android_iso_dep_transport.dart). Wraps `NfcManagerAndroid.enableReaderMode()`. It emits `TransportEvent.tagDiscovered` when a tag enters the RF field and `TransportEvent.tagLost` when it leaves or errors out.
 
 ## 2. SessionController
-The `SessionController` is the beating heart of the application. It acts as the bridge between raw byte arrays and the cryptographic state machine. 
+The [`SessionController`](file:///workspaces/mobile_application/smartlock_application/lib/features/session/session_controller.dart) is the beating heart of the application. It acts as the bridge between raw byte arrays and the cryptographic state machine. 
 
 ### State Machine (`TransportState`)
 The session transitions strictly through these states:
@@ -29,16 +29,37 @@ The session transitions strictly through these states:
 ## 3. Provisioning Sessions
 Provisioning introduces a "chicken-and-egg" problem: the phone needs to securely talk to the lock, but doesn't know the lock's public key to verify the handshake (M2).
 
-To solve this, `startProvisioningSession()` executes a **Dual-Deferred Handshake**:
-- It runs the standard handshake but *skips* verifying the lock's signature (`Sig_L`) at M2, caching it in a `DeferredM2` object instead.
+**Design Decision: The Dual-Deferred Handshake**
+To solve this, `startProvisioningSession()` executes a deferred handshake:
+- It runs the standard handshake but *skips* verifying the lock's signature (`Sig_L`) at M2, caching it in a `DeferredM2` object instead. If we enforced verification here, provisioning would fail immediately because the lock's identity is not yet known.
 - It sends M3 and establishes a tentative secure session.
 - The app sends `CMD_PROVISION` containing the 32-byte secret (from the QR code) and the phone's public key.
 - The lock validates the secret. If valid, it returns its public key.
 - The `ProvisionController` extracts this public key and *finally* verifies the cached `DeferredM2` signature.
 - If it passes, the lock is saved to the `TrustedLocksStore`.
 
+*Implementation from `SessionController._runHandshake()`:*
+```dart
+    if (lockPublicKey != null) {
+      // Normal session: verify Sig_L now.
+      final m2Result = await Handshake.parseAndVerifyM2(
+        m2Data: m1Rapdu.data,
+        ctx: ctx,
+        lockPublicKey: lockPublicKey,
+      );
+      // ...
+    } else {
+      // Provisioning: cache without verifying.
+      final m2Result = await Handshake.cacheM2ForProvisioning(
+        m2Data: m1Rapdu.data,
+        ctx: ctx,
+      );
+      // ...
+    }
+```
+
 ## 4. Hardware Interaction Lifecycles
 Because NFC requires physical proximity, the RF field's lifecycle is critical to UX and battery life.
 - The RF field is ONLY active between `startSession()` and `abort()`. 
-- If a user triggers a session but walks away, a strict 30-second `TimeoutException` drops the RF field to prevent infinite polling.
+- **Design Decision: Timeout Enforcement**: If a user triggers a session but walks away, a strict 30-second `TimeoutException` drops the RF field to prevent infinite polling.
 - Manual cancellations immediately fire `stopDiscovery()` to kill Android's reader mode.

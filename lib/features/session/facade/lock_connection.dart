@@ -129,11 +129,10 @@ class LockConnection {
     return switch (status) {
       AppStatus.invalidSecret =>
         const NfcSessionError.unexpected('invalid provision secret'),
-      AppStatus.unauthorized => const NfcSessionError.authenticationFailed(),
-      AppStatus.invalidCmd =>
-        const NfcSessionError.unexpected('invalid command'),
-      AppStatus.actuatorError =>
-        const NfcSessionError.unexpected('actuator error'),
+      AppStatus.unknownCmd =>
+        const NfcSessionError.unexpected('unknown command'),
+      AppStatus.actuatorFault =>
+        const NfcSessionError.unexpected('actuator fault'),
       _ => NfcSessionError.unexpected(
           'unknown app status: 0x${status.toRadixString(16)}'),
     };
