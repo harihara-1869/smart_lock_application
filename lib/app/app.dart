@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartlock_application/app/theme.dart';
+import 'package:smartlock_application/core/providers/nfc_providers.dart';
 import 'package:smartlock_application/features/ui/screens/my_keys_screen.dart';
 import 'package:smartlock_application/features/ui/screens/step_1_press_button.dart';
 import 'package:smartlock_application/features/ui/screens/step_2_scan_qr.dart';
@@ -8,16 +10,19 @@ import 'package:smartlock_application/features/ui/screens/actuate_lock_screen.da
 import 'package:smartlock_application/features/ui/screens/revoke_lock_screen.dart';
 
 /// Root widget for the NFC Smart Lock application.
-class App extends StatelessWidget {
+class App extends ConsumerWidget {
   const App({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+
     return MaterialApp(
       title: 'NFC Smart Lock',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       initialRoute: '/',
       onGenerateRoute: (settings) {
         switch (settings.name) {

@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:nfc_manager/nfc_manager.dart';
@@ -109,4 +109,16 @@ class TrustedLocksNotifier extends StateNotifier<AsyncValue<List<String>>> {
 
 final trustedLocksNotifierProvider = StateNotifierProvider<TrustedLocksNotifier, AsyncValue<List<String>>>((ref) {
   return TrustedLocksNotifier(ref.watch(trustedLocksStoreProvider));
+});
+
+class ThemeModeNotifier extends StateNotifier<ThemeMode> {
+  ThemeModeNotifier() : super(ThemeMode.dark);
+
+  void toggleTheme() {
+    state = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+  }
+}
+
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
+  return ThemeModeNotifier();
 });

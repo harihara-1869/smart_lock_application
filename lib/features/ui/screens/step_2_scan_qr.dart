@@ -78,6 +78,19 @@ class _Step2ScanQrScreenState extends ConsumerState<Step2ScanQrScreen> {
         title: const Text('Scan QR Code'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
+            tooltip: 'Toggle Light/Dark Theme',
+            onPressed: () {
+              ref.read(themeModeProvider.notifier).toggleTheme();
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [

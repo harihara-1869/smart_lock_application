@@ -80,6 +80,19 @@ class _Step3NfcSyncScreenState extends ConsumerState<Step3NfcSyncScreen> {
         title: const Text('NFC Sync'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
+            tooltip: 'Toggle Light/Dark Theme',
+            onPressed: () {
+              ref.read(themeModeProvider.notifier).toggleTheme();
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -88,12 +101,29 @@ class _Step3NfcSyncScreenState extends ConsumerState<Step3NfcSyncScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Spacer(),
-              Icon(
-                Icons.nfc,
-                size: 100,
-                color: _errorMessage != null
-                    ? theme.colorScheme.error
-                    : theme.colorScheme.primary,
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: 160,
+                height: 160,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _errorMessage != null
+                      ? theme.colorScheme.error.withValues(alpha: 0.12)
+                      : theme.colorScheme.primary.withValues(alpha: 0.12),
+                  border: Border.all(
+                    color: _errorMessage != null
+                        ? theme.colorScheme.error
+                        : theme.colorScheme.primary,
+                    width: 4,
+                  ),
+                ),
+                child: Icon(
+                  _errorMessage != null ? Icons.error_outline : Icons.nfc,
+                  size: 80,
+                  color: _errorMessage != null
+                      ? theme.colorScheme.error
+                      : theme.colorScheme.primary,
+                ),
               ),
               const SizedBox(height: 32),
               Text(

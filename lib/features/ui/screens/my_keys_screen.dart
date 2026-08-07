@@ -19,6 +19,15 @@ class MyKeysScreen extends ConsumerWidget {
         title: const Text('My Keys'),
         backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+            tooltip: 'Toggle Light/Dark Theme',
+            onPressed: () {
+              ref.read(themeModeProvider.notifier).toggleTheme();
+            },
+          ),
+        ],
       ),
       body: trustedLocksAsync.when(
         data: (locks) {

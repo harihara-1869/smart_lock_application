@@ -1,18 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smartlock_application/core/providers/nfc_providers.dart';
 import 'package:smartlock_application/core/widgets/primary_button.dart';
 
-class Step1PressButtonScreen extends StatelessWidget {
+class Step1PressButtonScreen extends ConsumerWidget {
   const Step1PressButtonScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Provision Lock'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+            tooltip: 'Toggle Light/Dark Theme',
+            onPressed: () {
+              ref.read(themeModeProvider.notifier).toggleTheme();
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(

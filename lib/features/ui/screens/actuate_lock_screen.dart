@@ -91,6 +91,19 @@ class _ActuateLockScreenState extends ConsumerState<ActuateLockScreen> {
         title: const Text('Actuate Lock'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
+            tooltip: 'Toggle Light/Dark Theme',
+            onPressed: () {
+              ref.read(themeModeProvider.notifier).toggleTheme();
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -114,10 +127,10 @@ class _ActuateLockScreenState extends ConsumerState<ActuateLockScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: _success
-                      ? Colors.green.withValues(alpha: 0.1)
+                      ? Colors.green.withValues(alpha: 0.12)
                       : (_errorMessage != null
-                          ? theme.colorScheme.error.withValues(alpha: 0.1)
-                          : theme.colorScheme.primaryContainer),
+                          ? theme.colorScheme.error.withValues(alpha: 0.12)
+                          : theme.colorScheme.primary.withValues(alpha: 0.12)),
                   border: Border.all(
                     color: _success
                         ? Colors.green

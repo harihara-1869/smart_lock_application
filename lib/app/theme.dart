@@ -42,6 +42,8 @@ class AppTheme {
       colorScheme: const ColorScheme.light(
         primary: CrystalColors.primary,
         onPrimary: CrystalColors.onPrimary,
+        primaryContainer: Color(0xFFE0F2FE),
+        onPrimaryContainer: CrystalColors.primary,
         secondary: CrystalColors.primary,
         onSecondary: CrystalColors.onPrimary,
         surface: CrystalColors.surface,

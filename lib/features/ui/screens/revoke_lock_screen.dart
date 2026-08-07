@@ -103,6 +103,19 @@ class _RevokeLockScreenState extends ConsumerState<RevokeLockScreen> {
         title: const Text('Revoke Lock'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
+            tooltip: 'Toggle Light/Dark Theme',
+            onPressed: () {
+              ref.read(themeModeProvider.notifier).toggleTheme();
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -119,16 +132,37 @@ class _RevokeLockScreenState extends ConsumerState<RevokeLockScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Icon(
-                  _success
-                      ? Icons.check_circle
-                      : (_errorMessage != null ? Icons.error_outline : Icons.nfc),
-                  size: 100,
-                  color: _success
-                      ? Colors.green
-                      : (_errorMessage != null
-                          ? theme.colorScheme.error
-                          : theme.colorScheme.primary),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  width: 160,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _success
+                        ? Colors.green.withValues(alpha: 0.12)
+                        : (_errorMessage != null
+                            ? theme.colorScheme.error.withValues(alpha: 0.12)
+                            : theme.colorScheme.primary.withValues(alpha: 0.12)),
+                    border: Border.all(
+                      color: _success
+                          ? Colors.green
+                          : (_errorMessage != null
+                              ? theme.colorScheme.error
+                              : theme.colorScheme.primary),
+                      width: 4,
+                    ),
+                  ),
+                  child: Icon(
+                    _success
+                        ? Icons.check_circle
+                        : (_errorMessage != null ? Icons.error_outline : Icons.nfc),
+                    size: 80,
+                    color: _success
+                        ? Colors.green
+                        : (_errorMessage != null
+                            ? theme.colorScheme.error
+                            : theme.colorScheme.primary),
+                  ),
                 ),
                 const SizedBox(height: 32),
                 Text(
