@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Flutter SDK](https://img.shields.io/badge/Flutter-%5E3.12.2-02569B?logo=flutter)](https://flutter.dev)
-[![Tests](https://img.shields.io/badge/Tests-190%20passed-brightgreen)](test)
+[![Tests](https://img.shields.io/badge/Tests-209%20passed-brightgreen)](test)
 [![Firmware Repo](https://img.shields.io/badge/Firmware-smart__lock__firmware-black?logo=github)](https://github.com/harihara-1869/smart_lock_firmware)
 
 A secure, high-assurance mobile application built with **Flutter** and **Dart**, designed to control and authenticate with the Smart Lock hardware over ISO-DEP NFC.
@@ -27,7 +27,7 @@ For the ESP32 hardware and PN532 controller implementation details, see the comp
 - [Getting Started & Development](#getting-started--development)
   - [Prerequisites](#prerequisites)
   - [Installation & Build](#installation--build)
-  - [Running Unit Tests](#running-unit-tests)
+  - [Running Tests](#running-tests)
 - [Related Repositories](#related-repositories)
 - [License](#license)
 
@@ -35,12 +35,15 @@ For the ESP32 hardware and PN532 controller implementation details, see the comp
 
 ## Overview
 
-The Smart Lock mobile app provides a secure, contactless interface for unlocking and managing smart locks. It implements client-side ISO-DEP NFC transport, cryptographic session establishment, and encrypted payload exchange.
+The Smart Lock mobile app provides a secure, contactless interface for unlocking, locking, and managing smart locks. It implements client-side ISO-DEP NFC transport, cryptographic session establishment, and encrypted payload exchange.
 
 ### Key Features
 - **Zero-Trust Mutual Authentication**: 3-message protocol (`SLOCK-HS-v1`) using **Ed25519** digital signatures over domain-separated session transcripts.
 - **Forward Secrecy**: Ephemeral **X25519** Diffie-Hellman key exchange per session with **HKDF-SHA256** key derivation (`K_p2e` and `K_e2p`).
 - **Authenticated Payload Encryption**: **AES-256-GCM** encryption with 12-byte CSPRNG nonces and 16-byte authentication tags.
+- **Dual Lock & Unlock Actuation**: Tap-to-actuate support for both `CMD_UNLOCK` (`0x02`) and `CMD_LOCK` (`0x03`) commands.
+- **Dual-Mode Theme System**: Toggleable Obsidian Cyber-Secure (Dark) and Crystal Secure (Light) themes with a top-right AppBar toggle button across all screens.
+- **Comprehensive UI & Unit Test Suite**: 209 tests covering APDU framing, cryptography, transport state machines, session lifecycle, and UI widgets (`testWidgets`).
 - **Robust Error Handling**: Type-safe monadic result types (`Result<T, E>`) and a sealed NFC error hierarchy (`NfcSessionError`).
 
 ---
@@ -58,7 +61,7 @@ lib/
 │   └── theme.dart              # Dark & light ThemeData configuration
 ├── core/                       # Core shared patterns & utilities
 │   ├── nfc_transport/          # IsoDepTransport contract + Android & fake implementations
-│   ├── providers/              # Riverpod dependency injection registry
+│   ├── providers/              # Riverpod dependency injection & themeModeProvider
 │   ├── widgets/                # Reusable UI components (PrimaryButton, SecureCard)
 │   └── result.dart             # Monadic Result<T, E> type for safe error handling
 ├── features/                   # Domain feature modules
@@ -71,7 +74,7 @@ lib/
 │   ├── session/                # Handshake, secure channel, identity & trusted-lock stores
 │   │   ├── commands/           # AppCommands (0x01-0x05) & LockStatus parsing
 │   │   ├── crypto/             # CryptoPrimitives (X25519, Ed25519, HKDF, AES-256-GCM)
-│   │   ├── facade/             # LockConnection typed high-level API
+│   │   ├── facade/             # LockConnection typed high-level API (unlock & lock)
 │   │   ├── provisioning/       # QR parsing, deferred handshake, ProvisionController
 │   │   ├── handshake.dart      # Pure M1/M2/M3 message builders, parsers & verification
 │   │   ├── identity_keystore.dart # Phone long-term Ed25519 key management
@@ -80,8 +83,9 @@ lib/
 │   │   └── trusted_locks_store.dart # Trusted lock public-key storage
 │   └── ui/                     # User interface screens
 │       └── screens/
-│           ├── actuate_lock_screen.dart # Tap-to-unlock NFC trigger screen
+│           ├── actuate_lock_screen.dart # Tap-to-unlock / Tap-to-lock actuation screen
 │           ├── my_keys_screen.dart      # Trusted locks dashboard
+│           ├── revoke_lock_screen.dart   # Key revocation screen (phone only vs. phone & lock)
 │           ├── step_1_press_button.dart # Provisioning: hardware interaction instructions
 │           ├── step_2_scan_qr.dart      # Provisioning: QR code scanner via mobile_scanner
 │           └── step_3_nfc_sync.dart     # Provisioning: NFC sync and key exchange
@@ -205,9 +209,9 @@ smartlock_application/
 │   ├── core/                       # Transport, providers, widgets & Result monad
 │   ├── features/                   # Feature modules (nfc, session, ui)
 │   └── main.dart                   # Application entry point
-├── test/                           # Unit & integration tests (17 files, 190 tests)
+├── test/                           # Unit, integration & UI widget tests (23 files, 209 tests)
 │   ├── core/                       # Result & transport tests
-│   └── features/                   # nfc, session (commands/crypto/integration/provisioning) tests
+│   └── features/                   # nfc, session, and ui screen widget tests
 ├── UI_Design/                      # Design mockups (stitch_nfc_smart_key_manager)
 ├── analysis_options.yaml           # Lint options
 ├── pubspec.yaml                    # Flutter dependencies & metadata
@@ -244,9 +248,9 @@ smartlock_application/
    dart run build_runner build --delete-conflicting-outputs
    ```
 
-### Running Unit Tests
+### Running Tests
 
-Execute the test suite to verify APDU framing, protocol parameters, handshake verification, secure-channel encryption, and the full provisioning/unlock cycle:
+Execute the complete test suite to verify APDU framing, protocol parameters, handshake verification, secure-channel encryption, full provisioning/unlock cycles, and UI widget rendering:
 
 ```bash
 flutter test
@@ -275,6 +279,6 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+protobuf or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 ```
