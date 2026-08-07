@@ -105,101 +105,103 @@ class _RevokeLockScreenState extends ConsumerState<RevokeLockScreen> {
         elevation: 0,
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Lock: ${widget.lockId}',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Lock: ${widget.lockId}',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
-              ),
-              const Spacer(),
-              Icon(
-                _success
-                    ? Icons.check_circle
-                    : (_errorMessage != null ? Icons.error_outline : Icons.nfc),
-                size: 100,
-                color: _success
-                    ? Colors.green
-                    : (_errorMessage != null
-                        ? theme.colorScheme.error
-                        : theme.colorScheme.primary),
-              ),
-              const SizedBox(height: 32),
-              Text(
-                _success
-                    ? 'Removed'
-                    : (_errorMessage != null
-                        ? 'Revoke Failed'
-                        : 'Choose how to revoke'),
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                const SizedBox(height: 24),
+                Icon(
+                  _success
+                      ? Icons.check_circle
+                      : (_errorMessage != null ? Icons.error_outline : Icons.nfc),
+                  size: 100,
                   color: _success
                       ? Colors.green
                       : (_errorMessage != null
                           ? theme.colorScheme.error
-                          : theme.colorScheme.onSurface),
+                          : theme.colorScheme.primary),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                _errorMessage ??
-                    (_success
-                        ? 'The lock has been removed.'
-                        : 'Remove this lock from your phone only, or from the lock itself too.'),
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: _errorMessage != null
-                      ? theme.colorScheme.error
-                      : theme.colorScheme.onSurfaceVariant,
+                const SizedBox(height: 32),
+                Text(
+                  _success
+                      ? 'Removed'
+                      : (_errorMessage != null
+                          ? 'Revoke Failed'
+                          : 'Choose how to revoke'),
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: _success
+                        ? Colors.green
+                        : (_errorMessage != null
+                            ? theme.colorScheme.error
+                            : theme.colorScheme.onSurface),
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              // Revoke scope selection
-              _buildScopeOption(
-                context,
-                title: 'Phone only',
-                subtitle: 'Removes the lock from this phone. No NFC needed.',
-                value: RevokeScope.phoneOnly,
-              ),
-              const SizedBox(height: 12),
-              _buildScopeOption(
-                context,
-                title: 'Phone and lock',
-                subtitle:
-                    'Also sends CMD_REVOKE_KEY to the lock. Requires an NFC tap.',
-                value: RevokeScope.lockAndPhone,
-              ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: PrimaryButton(
-                  text: _errorMessage != null
-                      ? 'Retry'
-                      : (_isRevoking
-                          ? 'Revoking...'
-                          : (_scope == RevokeScope.phoneOnly
-                              ? 'Remove from phone'
-                              : 'Tap phone to lock to revoke')),
-                  isLoading: _isRevoking,
-                  onPressed: (_isRevoking || _success) ? null : _revoke,
-                ),
-              ),
-              if (_isRevoking) ...[
                 const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {
-                    ref.read(lockConnectionProvider).abort();
-                  },
-                  child: const Text('Cancel'),
+                Text(
+                  _errorMessage ??
+                      (_success
+                          ? 'The lock has been removed.'
+                          : 'Remove this lock from your phone only, or from the lock itself too.'),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: _errorMessage != null
+                        ? theme.colorScheme.error
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 24),
+                // Revoke scope selection
+                _buildScopeOption(
+                  context,
+                  title: 'Phone only',
+                  subtitle: 'Removes the lock from this phone. No NFC needed.',
+                  value: RevokeScope.phoneOnly,
+                ),
+                const SizedBox(height: 12),
+                _buildScopeOption(
+                  context,
+                  title: 'Phone and lock',
+                  subtitle:
+                      'Also sends CMD_REVOKE_KEY to the lock. Requires an NFC tap.',
+                  value: RevokeScope.lockAndPhone,
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: PrimaryButton(
+                    text: _errorMessage != null
+                        ? 'Retry'
+                        : (_isRevoking
+                            ? 'Revoking...'
+                            : (_scope == RevokeScope.phoneOnly
+                                ? 'Remove from phone'
+                                : 'Tap phone to lock to revoke')),
+                    isLoading: _isRevoking,
+                    onPressed: (_isRevoking || _success) ? null : _revoke,
+                  ),
+                ),
+                if (_isRevoking) ...[
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      ref.read(lockConnectionProvider).abort();
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

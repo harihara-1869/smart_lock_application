@@ -226,16 +226,11 @@ void _enqueueHandshake(FakeIsoDepTransport transport, _SimulatedLock lock) {
 void main() {
   late Uint8List lockSeed;
   late Uint8List lockPublicKey;
-  late Uint8List phoneSeed;
-  late Uint8List phonePublicKey;
 
   setUp(() async {
     final lockKp = await CryptoPrimitives.generateEd25519KeyPair();
     lockSeed = lockKp.privateKey;
     lockPublicKey = lockKp.publicKey;
-    final phoneKp = await CryptoPrimitives.generateEd25519KeyPair();
-    phoneSeed = phoneKp.privateKey;
-    phonePublicKey = phoneKp.publicKey;
   });
 
   group('Full session integration', () {
