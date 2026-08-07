@@ -20,18 +20,22 @@ class _ActuateLockScreenState extends ConsumerState<ActuateLockScreen> {
   bool _isActuating = false;
   String? _errorMessage;
   bool _success = false;
+  bool _lastWasLock = false;
 
-  Future<void> _actuateLock() async {
+  Future<void> _actuateLock({required bool isLocking}) async {
     if (_isActuating) return;
 
     setState(() {
       _isActuating = true;
       _errorMessage = null;
       _success = false;
+      _lastWasLock = isLocking;
     });
 
     final lockConnection = ref.read(lockConnectionProvider);
-    final result = await lockConnection.unlock(widget.lockId);
+    final result = isLocking
+        ? await lockConnection.lock(widget.lockId)
+        : await lockConnection.unlock(widget.lockId);
 
     if (mounted) {
       switch (result) {
@@ -40,10 +44,11 @@ class _ActuateLockScreenState extends ConsumerState<ActuateLockScreen> {
             _isActuating = false;
             _success = true;
           });
+          final actionText = isLocking ? 'Locked' : 'Unlocked';
           // Show success snackbar
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Lock Unlocked Successfully!'),
+            SnackBar(
+              content: Text('Lock $actionText Successfully!'),
               backgroundColor: Colors.green,
             ),
           );
@@ -66,9 +71,24 @@ class _ActuateLockScreenState extends ConsumerState<ActuateLockScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final String headlineText = _success
+        ? (_lastWasLock ? 'Locked!' : 'Unlocked!')
+        : (_errorMessage != null
+            ? (_lastWasLock ? 'Lock Failed' : 'Unlock Failed')
+            : 'Lock / Unlock Control');
+
+    final String bodyText = _errorMessage ??
+        (_success
+            ? (_lastWasLock ? 'The door is now locked.' : 'You may now open the door.')
+            : 'Place phone near the lock\'s NFC pad to actuate.');
+
+    final IconData statusIcon = _success
+        ? (_lastWasLock ? Icons.lock : Icons.lock_open)
+        : (_errorMessage != null ? Icons.error_outline : Icons.nfc);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Unlock'),
+        title: const Text('Actuate Lock'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -108,9 +128,7 @@ class _ActuateLockScreenState extends ConsumerState<ActuateLockScreen> {
                   ),
                 ),
                 child: Icon(
-                  _success
-                      ? Icons.lock_open
-                      : (_errorMessage != null ? Icons.error_outline : Icons.nfc),
+                  statusIcon,
                   size: 80,
                   color: _success
                       ? Colors.green
@@ -121,11 +139,7 @@ class _ActuateLockScreenState extends ConsumerState<ActuateLockScreen> {
               ),
               const SizedBox(height: 32),
               Text(
-                _success
-                    ? 'Unlocked!'
-                    : (_errorMessage != null
-                        ? 'Unlock Failed'
-                        : 'Ready to Unlock'),
+                headlineText,
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: _success
@@ -138,10 +152,7 @@ class _ActuateLockScreenState extends ConsumerState<ActuateLockScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                _errorMessage ??
-                    (_success
-                        ? 'You may now open the door.'
-                        : 'Place phone near the lock\'s NFC pad to actuate.'),
+                bodyText,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: _errorMessage != null
                       ? theme.colorScheme.error
@@ -150,23 +161,46 @@ class _ActuateLockScreenState extends ConsumerState<ActuateLockScreen> {
                 textAlign: TextAlign.center,
               ),
               const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: PrimaryButton(
-                  text: _errorMessage != null
-                      ? 'Retry'
-                      : (_isActuating ? 'Actuating...' : 'Tap to Unlock'),
-                  isLoading: _isActuating,
-                  onPressed: (_isActuating || _success) ? null : _actuateLock,
+              if (_errorMessage != null) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: PrimaryButton(
+                    text: 'Retry',
+                    onPressed: () => _actuateLock(isLocking: _lastWasLock),
+                  ),
                 ),
-              ),
-              if (_isActuating) ...[
+              ] else if (_isActuating) ...[
+                const SizedBox(
+                  width: double.infinity,
+                  child: PrimaryButton(
+                    text: 'Actuating...',
+                    isLoading: true,
+                  ),
+                ),
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () {
                     ref.read(lockConnectionProvider).abort();
                   },
                   child: const Text('Cancel'),
+                ),
+              ] else ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: PrimaryButton(
+                    text: 'Tap to Unlock',
+                    icon: Icons.lock_open,
+                    onPressed: _success ? null : () => _actuateLock(isLocking: false),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: PrimaryButton(
+                    text: 'Tap to Lock',
+                    icon: Icons.lock,
+                    onPressed: _success ? null : () => _actuateLock(isLocking: true),
+                  ),
                 ),
               ],
             ],

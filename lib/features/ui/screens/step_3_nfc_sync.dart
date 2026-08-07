@@ -51,10 +51,12 @@ class _Step3NfcSyncScreenState extends ConsumerState<Step3NfcSyncScreen> {
       switch (result) {
         case Ok():
           // Success! Clear the one-shot secret and refresh the keys list.
+          final navigator = Navigator.of(context);
+          final messenger = ScaffoldMessenger.of(context);
           ref.read(provisionSecretProvider.notifier).clear();
           ref.read(trustedLocksNotifierProvider.notifier).refresh();
-          Navigator.popUntil(context, ModalRoute.withName('/'));
-          ScaffoldMessenger.of(context).showSnackBar(
+          navigator.popUntil((route) => route.isFirst || route.settings.name == '/');
+          messenger.showSnackBar(
             const SnackBar(
               content: Text('Lock successfully provisioned!'),
               backgroundColor: Colors.green,
