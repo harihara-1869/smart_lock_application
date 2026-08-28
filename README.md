@@ -2,7 +2,8 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Flutter SDK](https://img.shields.io/badge/Flutter-%5E3.12.2-02569B?logo=flutter)](https://flutter.dev)
-[![Tests](https://img.shields.io/badge/Tests-209%20passed-brightgreen)](test)
+[![Tests](https://img.shields.io/badge/Tests-228%20passed-brightgreen)](test)
+[![Latest Beta](https://img.shields.io/badge/Release-v1.0.0--beta.1-orange?logo=github)](https://github.com/harihara-1869/smart_lock_application/releases/tag/v1.0.0-beta.1)
 [![Firmware Repo](https://img.shields.io/badge/Firmware-smart__lock__firmware-black?logo=github)](https://github.com/harihara-1869/smart_lock_firmware)
 
 A secure, high-assurance mobile application built with **Flutter** and **Dart**, designed to control and authenticate with the Smart Lock hardware over ISO-DEP NFC.
@@ -234,8 +235,8 @@ smartlock_application/
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-org/smartlock_application.git
-   cd smartlock_application
+   git clone https://github.com/harihara-1869/smart_lock_application.git
+   cd smart_lock_application
    ```
 
 2. **Install dependencies**:
@@ -248,6 +249,40 @@ smartlock_application/
    dart run build_runner build --delete-conflicting-outputs
    ```
 
+### Signing a Release Build
+
+The app's `android/app/build.gradle.kts` reads release signing credentials from `android/key.properties` if that file exists, and falls back to the Flutter debug key otherwise. To produce a properly-signed release APK that you can install over and over across phones, set up a real keystore:
+
+1. **Generate a keystore** (one-time, ~27 years validity, RSA 2048):
+   ```bash
+   keytool -genkey -v \
+     -keystore ~/smartlock-beta.jks \
+     -keyalg RSA -keysize 2048 -validity 10000 \
+     -alias smartlock-beta
+   ```
+   You'll be prompted for a store password, a key password (can match the store password), and a few certificate questions (First and Last Name, Organization, etc.). Answer them — they show up in the APK's signing certificate.
+
+2. **Edit `android/key.properties`** (created from a template) and fill in the four fields:
+   ```properties
+   storePassword=<the password you typed>
+   keyPassword=<the key password>
+   keyAlias=smartlock-beta
+   storeFile=/home/<your-username>/smartlock-beta.jks
+   ```
+   Use an **absolute path** for `storeFile`. This file is gitignored — keep it that way.
+
+3. **Back up the keystore.** If you lose `smartlock-beta.jks`, you can never re-sign the app with the same identity, so users with a previously-installed version will not be able to update. Store it somewhere safe (an encrypted backup, a password manager attachment, etc.).
+
+4. **Build the signed release APK**:
+   ```bash
+   flutter build apk --release
+   ```
+   The output lands at `build/app/outputs/flutter-apk/app-release.apk`. Verify the signature with:
+   ```bash
+   apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk
+   ```
+   The cert should match the one you generated. For per-ABI builds (smaller files), use `flutter build apk --release --split-per-abi` and ship the `app-arm64-v8a-release.apk` variant.
+
 ### Running Tests
 
 Execute the complete test suite to verify APDU framing, protocol parameters, handshake verification, secure-channel encryption, full provisioning/unlock cycles, and UI widget rendering:
@@ -255,6 +290,16 @@ Execute the complete test suite to verify APDU framing, protocol parameters, han
 ```bash
 flutter test
 ```
+
+---
+
+## Releases
+
+Pre-built APKs are published on the GitHub Releases page.
+
+- **Latest beta**: [v1.0.0-beta.1](https://github.com/harihara-1869/smart_lock_application/releases/tag/v1.0.0-beta.1) — signed with a stable release key, ready to sideload onto Android phones for testing. Download `app-release.apk` from the release assets and install it directly (you may need to enable "Install from unknown sources" for your browser or file manager).
+
+For older or in-development builds, build from source using the [Signing a Release Build](#signing-a-release-build) instructions above.
 
 ---
 
