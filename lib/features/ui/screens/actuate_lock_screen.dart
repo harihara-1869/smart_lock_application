@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartlock_application/core/providers/nfc_providers.dart';
 import 'package:smartlock_application/core/result.dart';
+import 'package:smartlock_application/core/widgets/lock_name_label.dart';
 import 'package:smartlock_application/core/widgets/primary_button.dart';
 
 class ActuateLockScreen extends ConsumerStatefulWidget {
@@ -106,19 +107,17 @@ class _ActuateLockScreenState extends ConsumerState<ActuateLockScreen> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                'Lock: ${widget.lockId}',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
-                ),
+              LockNameLabel(
+                lockId: widget.lockId,
+                variant: LockNameLabelVariant.title,
+                enabled: !_isActuating && !_success,
               ),
-              const Spacer(),
+              const SizedBox(height: 24),
               // Central NFC Actuation visualization
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
@@ -173,7 +172,7 @@ class _ActuateLockScreenState extends ConsumerState<ActuateLockScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const Spacer(),
+              const SizedBox(height: 24),
               if (_errorMessage != null) ...[
                 SizedBox(
                   width: double.infinity,

@@ -44,8 +44,36 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Lock: Lock-1234'), findsOneWidget);
+    // With no name set, the card label falls back to the lock ID.
+    expect(find.text('Lock-1234'), findsOneWidget);
     expect(find.text('Stored securely'), findsOneWidget);
+  });
+
+  testWidgets('MyKeysScreen shows the saved name and tapping it opens rename dialog', (WidgetTester tester) async {
+    await trustedStore.storeTrustedKey('Lock-1234', Uint8List.fromList(List.filled(32, 0x01)));
+    await trustedStore.setLockName('Lock-1234', 'Front Door');
+
+    await tester.pumpWidget(createWidgetToTest());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Front Door'), findsOneWidget);
+    expect(find.text('Lock-1234'), findsNothing);
+
+    await tester.tap(find.text('Front Door'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Rename Lock'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Front Door'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'Back Door');
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Back Door'), findsOneWidget);
+    expect(await trustedStore.getLockName('Lock-1234'), 'Back Door');
   });
 
   testWidgets('Begin Provisioning button navigates to step 1', (WidgetTester tester) async {

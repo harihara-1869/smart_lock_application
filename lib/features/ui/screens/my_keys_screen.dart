@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartlock_application/core/providers/nfc_providers.dart';
+import 'package:smartlock_application/core/widgets/lock_name_label.dart';
 import 'package:smartlock_application/core/widgets/primary_button.dart';
 import 'package:smartlock_application/core/widgets/secure_card.dart';
 import 'package:smartlock_application/features/ui/screens/revoke_lock_screen.dart';
@@ -67,13 +68,12 @@ class MyKeysScreen extends ConsumerWidget {
 
   Widget _buildLockCard(BuildContext context, WidgetRef ref, String lockId, bool isDark) {
     final primaryColor = Theme.of(context).colorScheme.primary;
-    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
     final onSurfaceVariantColor = Theme.of(context).colorScheme.onSurfaceVariant;
     final errorColor = Theme.of(context).colorScheme.error;
-    
+
     // In Flutter 3.22+, you can access surfaceContainerHighest if properly themed.
     // We'll use surfaceContainerHighest or surfaceVariant as fallback.
-    final iconBgColor = Theme.of(context).colorScheme.surfaceContainerHighest; 
+    final iconBgColor = Theme.of(context).colorScheme.surfaceContainerHighest;
 
     return SecureCard(
       padding: const EdgeInsets.all(16),
@@ -102,13 +102,9 @@ class MyKeysScreen extends ConsumerWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Lock: $lockId', 
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: onSurfaceColor,
-                    ),
+                  LockNameLabel(
+                    lockId: lockId,
+                    variant: LockNameLabelVariant.card,
                   ),
                   const SizedBox(height: 4),
                   Row(

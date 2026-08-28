@@ -51,12 +51,63 @@ void main() {
     test('storeTrustedKey overwrites existing', () async {
       final key1 = Uint8List.fromList(List.generate(32, (i) => i));
       final key2 = Uint8List.fromList(List.generate(32, (i) => 255 - i));
-      
+
       await store.storeTrustedKey('lock_1', key1);
       await store.storeTrustedKey('lock_1', key2);
-      
+
       final key = await store.getLockPublicKey('lock_1');
       expect(key, equals(key2));
+    });
+
+    group('lock names', () {
+      test('getLockName returns null when no name is set', () async {
+        final name = await store.getLockName('lock_x');
+        expect(name, isNull);
+      });
+
+      test('setLockName then getLockName round-trips', () async {
+        await store.setLockName('lock_1', 'Front Door');
+        final name = await store.getLockName('lock_1');
+        expect(name, 'Front Door');
+      });
+
+      test('setLockName trims surrounding whitespace', () async {
+        await store.setLockName('lock_1', '  Back Door  ');
+        final name = await store.getLockName('lock_1');
+        expect(name, 'Back Door');
+      });
+
+      test('setLockName with empty string removes any existing name', () async {
+        await store.setLockName('lock_1', 'Front Door');
+        await store.setLockName('lock_1', '   ');
+        expect(await store.getLockName('lock_1'), isNull);
+      });
+
+      test('setLockName is a no-op when the trimmed name is unchanged', () async {
+        await store.setLockName('lock_1', 'Front Door');
+        await store.setLockName('lock_1', '  Front Door  ');
+        final name = await store.getLockName('lock_1');
+        expect(name, 'Front Door');
+      });
+
+      test('removeTrustedKey also drops the user-chosen name', () async {
+        final dummyKey = Uint8List.fromList(List.generate(32, (i) => i));
+        await store.storeTrustedKey('lock_1', dummyKey);
+        await store.setLockName('lock_1', 'Front Door');
+
+        await store.removeTrustedKey('lock_1');
+
+        expect(await store.getLockName('lock_1'), isNull);
+        expect(await store.getLockPublicKey('lock_1'), isNull);
+      });
+
+      test('names are isolated per lock', () async {
+        await store.setLockName('lock_1', 'Front Door');
+        await store.setLockName('lock_2', 'Back Door');
+
+        expect(await store.getLockName('lock_1'), 'Front Door');
+        expect(await store.getLockName('lock_2'), 'Back Door');
+      });
     });
   });
 }
