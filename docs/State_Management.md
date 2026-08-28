@@ -42,6 +42,7 @@ All providers are declared in [`lib/core/providers/nfc_providers.dart`](file:///
 | `storageProvider` | `Provider<FlutterSecureStorage>` | Hardware-backed keystore persistence. |
 | `identityKeystoreProvider` | `Provider<IdentityKeystore>` | Phone's long-term Ed25519 identity. |
 | `trustedLocksStoreProvider` | `Provider<TrustedLocksStore>` | Trusted lock public keys. |
+| `themeModeProvider` | `StateNotifierProvider<ThemeModeNotifier, ThemeMode>` | User-selected theme mode. Persisted to `FlutterSecureStorage` under `theme_mode`; on first launch it falls back to the platform brightness (`WidgetsBinding.platformDispatcher.platformBrightness`). |
 
 ### 3.2 Domain Controllers
 

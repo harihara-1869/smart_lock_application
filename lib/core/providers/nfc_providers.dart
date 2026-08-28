@@ -111,14 +111,79 @@ final trustedLocksNotifierProvider = StateNotifierProvider<TrustedLocksNotifier,
   return TrustedLocksNotifier(ref.watch(trustedLocksStoreProvider));
 });
 
+/// Persists the user's chosen [ThemeMode] in [FlutterSecureStorage] so the
+/// app reopens in the last-selected theme. On first launch (no value stored),
+/// it falls back to the platform's current brightness, so a phone set to
+/// light mode opens in light, and a phone set to dark mode opens in dark.
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  ThemeModeNotifier() : super(ThemeMode.dark);
+  static const _storageKey = 'theme_mode';
+
+  final FlutterSecureStorage _storage;
+
+  ThemeModeNotifier(this._storage) : super(_initialMode()) {
+    _loadPersistedMode();
+  }
+
+  static ThemeMode _initialMode() {
+    final platformBrightness =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    return platformBrightness == Brightness.dark
+        ? ThemeMode.dark
+        : ThemeMode.light;
+  }
+
+  Future<void> _loadPersistedMode() async {
+    try {
+      final stored = await _storage.read(key: _storageKey);
+      if (stored == null) return;
+      final parsed = _decode(stored);
+      if (parsed != null) state = parsed;
+    } catch (_) {
+      // Ignore read errors and keep the platform-derived default.
+    }
+  }
 
   void toggleTheme() {
-    state = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    final next = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    state = next;
+    _persist(next);
+  }
+
+  void setMode(ThemeMode mode) {
+    if (mode == state) return;
+    state = mode;
+    _persist(mode);
+  }
+
+  void _persist(ThemeMode mode) {
+    _storage.write(key: _storageKey, value: _encode(mode));
+  }
+
+  static String _encode(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.light:
+        return 'light';
+      case ThemeMode.dark:
+        return 'dark';
+      case ThemeMode.system:
+        return 'system';
+    }
+  }
+
+  static ThemeMode? _decode(String value) {
+    switch (value) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+        return ThemeMode.system;
+      default:
+        return null;
+    }
   }
 }
 
 final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
-  return ThemeModeNotifier();
+  return ThemeModeNotifier(ref.watch(storageProvider));
 });
