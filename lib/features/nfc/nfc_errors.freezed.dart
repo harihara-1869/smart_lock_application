@@ -474,12 +474,12 @@ $NfcInvalidStateCopyWith<NfcInvalidState> get copyWith => _$NfcInvalidStateCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NfcInvalidState&&(identical(other.current, current) || other.current == current)&&(identical(other.operation, operation) || other.operation == operation));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NfcInvalidState&&const DeepCollectionEquality().equals(other.current, current)&&(identical(other.operation, operation) || other.operation == operation));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,current,operation);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(current),operation);
 
 @override
 String toString() {
@@ -498,7 +498,7 @@ $Res call({
 });
 
 
-$TransportStateCopyWith<$Res> get current;
+
 
 }
 /// @nodoc
@@ -511,24 +511,15 @@ class _$NfcInvalidStateCopyWithImpl<$Res>
 
 /// Create a copy of NfcSessionError
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? current = null,Object? operation = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? current = freezed,Object? operation = null,}) {
   return _then(NfcInvalidState(
-null == current ? _self.current : current // ignore: cast_nullable_to_non_nullable
+freezed == current ? _self.current : current // ignore: cast_nullable_to_non_nullable
 as TransportState,null == operation ? _self.operation : operation // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }
 
-/// Create a copy of NfcSessionError
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$TransportStateCopyWith<$Res> get current {
-  
-  return $TransportStateCopyWith<$Res>(_self.current, (value) {
-    return _then(_self.copyWith(current: value));
-  });
-}
+
 }
 
 /// @nodoc

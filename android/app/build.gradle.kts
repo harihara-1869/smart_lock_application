@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.smartlock_application"
+    namespace = "com.harihara1869.smartlock_application"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
